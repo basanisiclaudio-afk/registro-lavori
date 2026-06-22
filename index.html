@@ -1553,13 +1553,14 @@ td.ic-note{
 }
 
 </style>
+<!-- Fix ChatGPT 2026-06-22: CDN Firebase + anti-blocco cloud -->
 </head>
 <body>
 
 <!-- ===== CLOUD SYNC: Firebase SDK ===== -->
-<script src="./Registro Lavori — Basanisi Claudio Tributarista_files/firebase-app-compat.js.download"></script>
-<script src="./Registro Lavori — Basanisi Claudio Tributarista_files/firebase-auth-compat.js.download"></script>
-<script src="./Registro Lavori — Basanisi Claudio Tributarista_files/firebase-firestore-compat.js.download"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <script>
   // ============================================================
   // CONFIGURAZIONE FIREBASE — incolla qui i valori del tuo progetto
@@ -1573,13 +1574,25 @@ td.ic-note{
     messagingSenderId: "38181818495",
     appId: "1:38181818495:web:360a9090c03fca9c42af4a"
   };
-  firebase.initializeApp(firebaseConfig);
+  if(!window.firebase || !firebase.initializeApp){
+    window.__firebaseLoadError = true;
+    document.addEventListener('DOMContentLoaded',()=>{
+      const ov=document.getElementById('loginOverlay');
+      if(ov) ov.style.display='flex';
+      const msg=document.getElementById('loginMsg');
+      if(msg){
+        msg.innerHTML='<div class="fic-msg fic-err"><span>Firebase non si è caricato. Controlla la connessione internet oppure ricarica la pagina.</span></div>';
+      }
+    });
+  }else{
+    firebase.initializeApp(firebaseConfig);
+  }
 </script>
 
 <!-- ===== CLOUD SYNC: schermo di accesso (stile Fatture in Cloud) ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com/">
 <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
-<link href="./Registro Lavori — Basanisi Claudio Tributarista_files/css2" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --fic-blue:#0B5FDB; --fic-blue-dark:#073C8C; --fic-blue-bg:#EEF4FF;
@@ -1651,7 +1664,7 @@ td.ic-note{
   .fic-msg svg{width:15px;height:15px;flex:none;margin-top:1px;}
   .fic-foot{text-align:center;font-size:11px;color:#A6AFC0;margin-top:24px;letter-spacing:.02em;}
 </style>
-<div id="loginOverlay" style="display: none;">
+<div id="loginOverlay" style="display: flex;">
   <div class="fic-card">
     <div class="fic-badge">
       <svg viewBox="0 0 24 24" fill="none"><path d="M5 4.5C5 3.67 5.67 3 6.5 3H14l5 5v11.5c0 .83-.67 1.5-1.5 1.5h-11c-.83 0-1.5-.67-1.5-1.5v-15Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"></path><path d="M14 3v4.5c0 .55.45 1 1 1H19" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"></path><path d="M8.2 13.2l2.3 2.3 5.3-5.3" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -2531,19 +2544,32 @@ async function load(){
   __uid = user && user.uid;
   if(!__uid) return;
   try{
-    const snap = await registroCloudDoc().get();
+    const snap = await Promise.race([
+      registroCloudDoc().get(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout caricamento archivio cloud')),15000))
+    ]);
     if(snap.exists && snap.data().json){
       S=JSON.parse(snap.data().json);
       migrateState();
       return;
     }
-  }catch(e){ console.error('Errore caricamento archivio cloud unico:',e); }
-  // Primo accesso al nuovo archivio unico: inizializza con il backup ripristinato del 22/06/2026.
-  S=JSON.parse(JSON.stringify(SEED_DATA));
-  migrateState();
-  save(true);
+    // Primo accesso al nuovo archivio unico: inizializza con il backup ripristinato del 22/06/2026.
+    S=JSON.parse(JSON.stringify(SEED_DATA));
+    migrateState();
+    save(true);
+    return;
+  }catch(e){
+    console.error('Errore caricamento archivio cloud unico:',e);
+    // Protezione anti-blocco: se il cloud non risponde, l'app si apre comunque in sola visualizzazione
+    // con i dati di partenza, senza sovrascrivere l'archivio cloud.
+    S=JSON.parse(JSON.stringify(SEED_DATA));
+    migrateState(false);
+    const sav=$('savTxt');
+    if(sav) sav.textContent='Cloud non raggiungibile: dati locali di emergenza, non sovrascritti';
+    try{toast('Cloud non raggiungibile: ricarica la pagina tra qualche secondo');}catch(_e){}
+  }
 }
-function migrateState(){
+function migrateState(allowSave=true){
   // Migrazione non distruttiva: unifica solo il colore delle categorie esistenti,
   // aggiorna i vecchi valori di "tipo soggetto" alla nuova nomenclatura, e imposta
   // l'esercizio infrannuale di Cassina Nuova SOLO se non è già stato configurato a mano.
@@ -2579,7 +2605,7 @@ function migrateState(){
     });
   }
   if(!S.anno) S.anno=2026;
-  if(changed) save(true);
+  if(changed && allowSave) save(true);
 }
 function save(silent){
   const user = firebase.auth().currentUser;
@@ -3559,15 +3585,27 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 // ===== CLOUD SYNC: gate di autenticazione =====
 // Mostra l'app solo dopo il login; al login carica i dati da Firestore (o li inizializza al primo accesso).
-firebase.auth().onAuthStateChanged(async (user)=>{
-  if(user){
-    document.getElementById('loginOverlay').style.display='none';
-    await load();
-    refreshAnno(); renderTable(); renderDashboard();
-  } else {
-    document.getElementById('loginOverlay').style.display='flex';
-  }
-});
+if(window.firebase && firebase.auth){
+  firebase.auth().onAuthStateChanged(async (user)=>{
+    if(user){
+      try{
+        await load();
+        if(!S) S=JSON.parse(JSON.stringify(SEED_DATA));
+        refreshAnno(); renderTable(); renderDashboard();
+        document.getElementById('loginOverlay').style.display='none';
+      }catch(e){
+        console.error('Errore avvio Registro Lavori:',e);
+        document.getElementById('loginOverlay').style.display='flex';
+        if(typeof showMsg==='function') showMsg('Errore di avvio. Ricarica la pagina; se continua, usa il backup.', 'err');
+      }
+    } else {
+      document.getElementById('loginOverlay').style.display='flex';
+    }
+  });
+}else{
+  document.getElementById('loginOverlay').style.display='flex';
+  if(typeof showMsg==='function') showMsg('Firebase non è disponibile: ricarica la pagina o controlla la connessione.', 'err');
+}
 </script>
 
 
