@@ -1557,9 +1557,9 @@ td.ic-note{
 <body>
 
 <!-- ===== CLOUD SYNC: Firebase SDK ===== -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="./Registro Lavori — Basanisi Claudio Tributarista_files/firebase-app-compat.js.download"></script>
+<script src="./Registro Lavori — Basanisi Claudio Tributarista_files/firebase-auth-compat.js.download"></script>
+<script src="./Registro Lavori — Basanisi Claudio Tributarista_files/firebase-firestore-compat.js.download"></script>
 <script>
   // ============================================================
   // CONFIGURAZIONE FIREBASE — incolla qui i valori del tuo progetto
@@ -1579,7 +1579,7 @@ td.ic-note{
 <!-- ===== CLOUD SYNC: schermo di accesso (stile Fatture in Cloud) ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com/">
 <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="./Registro Lavori — Basanisi Claudio Tributarista_files/css2" rel="stylesheet">
 <style>
   :root{
     --fic-blue:#0B5FDB; --fic-blue-dark:#073C8C; --fic-blue-bg:#EEF4FF;
@@ -3336,7 +3336,14 @@ function computeDashboard(){
       deadlines.push({id:c.id+'_'+cl.id,nome:`${c.nome} — ${cl.rs} (esercizio infrannuale)`,colore:c.colore,deadline,diffDays,total:1,done});
     });
   });
-  deadlines.sort((a,b)=>a.diffDays-b.diffDays);
+  // V17: le scadenze già completate non devono risultare scadute.
+  // Ordino prima le scadenze ancora da completare, poi quelle completate.
+  deadlines.sort((a,b)=>{
+    const ac=a.total>0 && a.done>=a.total;
+    const bc=b.total>0 && b.done>=b.total;
+    if(ac!==bc)return ac?1:-1;
+    return a.diffDays-b.diffDays;
+  });
 
   const tipoCount={};
   clienti.forEach(cl=>{const t=cl.tipo||'Altro';tipoCount[t]=(tipoCount[t]||0)+1;});
@@ -3398,9 +3405,20 @@ function renderDashboard(){
 
   $('scadList').innerHTML=d.deadlines.length ? d.deadlines.map(s=>{
     let cd='cd-green',txt;
-    if(s.diffDays<0){cd='cd-red';txt=`Scaduta da ${-s.diffDays}g`;}
-    else if(s.diffDays<=30){cd='cd-amber';txt=`Tra ${s.diffDays}g`;}
-    else {txt=`Tra ${s.diffDays}g`;}
+    const completed=s.total>0 && s.done>=s.total;
+    if(completed){
+      cd='cd-green';
+      txt='Completata';
+    }else if(s.diffDays<0){
+      cd='cd-red';
+      txt=`Scaduta da ${-s.diffDays}g`;
+    }else if(s.diffDays<=30){
+      cd='cd-amber';
+      txt=`Tra ${s.diffDays}g`;
+    }else{
+      cd='cd-green';
+      txt=`Tra ${s.diffDays}g`;
+    }
     return `<div class="scad-item">
       <div><div class="nm">${esc(s.nome)}</div><div class="dt">${formatDate(s.deadline)} · ${s.done}/${s.total} clienti completati</div></div>
       <div class="cd ${cd}">${txt}</div>
