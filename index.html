@@ -1555,6 +1555,10 @@ td.ic-note{
 /* =========================================================
    V19 — sicurezza iPhone: compilazione bloccata durante lo scroll
    ========================================================= */
+body.edit-locked td.cn{
+  cursor:default!important;
+  pointer-events:none;
+}
 body.edit-locked td.cell[data-cid]{
   pointer-events:none!important;
   cursor:grab!important;
@@ -1821,18 +1825,18 @@ body.edit-locked td.cell[data-cid]:hover::before{
     <option value="note">Note</option>
   </select>
   <div class="sp2"></div>
-  <button class="btn pri" id="btnDash">Dashboard</button>
-  <button class="btn" id="btnLeg">Legenda</button>
-  <button class="btn" id="btnAdem">Adempimenti</button>
+  <button class="btn pri" id="btnDash">📊 Dashboard</button>
+  <button class="btn" id="btnLeg">📋 Legenda</button>
+  <button class="btn" id="btnAdem">📅 Adempimenti</button>
   <button class="btn edit-lock" id="btnEditLock" type="button" aria-pressed="false" title="Blocca o sblocca la compilazione delle caselle">🔒 Caselle bloccate</button>
   <div class="sep"></div>
-  <button class="btn" id="btnExp">Esporta Excel</button>
-  <button class="btn backup" id="btnBackup">Esegui backup</button>
-  <button class="btn ghost" id="btnRestore">Ripristina backup</button>
+  <button class="btn" id="btnExp">📥 Esporta Excel</button>
+  <button class="btn backup" id="btnBackup">💾 Esegui backup</button>
+  <button class="btn ghost" id="btnRestore">📂 Ripristina backup</button>
   <input type="file" id="backupFile" accept="application/json,.json" style="display:none">
-  <button class="btn" id="btnPrt">Stampa</button>
+  <button class="btn" id="btnPrt">🖨️ Stampa</button>
   <div class="sep"></div>
-  <button class="btn pri" id="btnNew">+ Cliente</button>
+  <button class="btn pri" id="btnNew">➕ Cliente</button>
   <div class="saved"><i></i><span id="savTxt">Dati salvati</span></div>
 </div>
 
@@ -3126,7 +3130,10 @@ function renderTable(){
   const colgroup = `<colgroup><col class="col-cn">${INFO_COLS.map(ic=>`<col class="col-info col-${ic.k}">`).join('')}${cats.map(c=>periods(c).map(()=>'<col class="col-check">').join('')).join('')}</colgroup>`;
   $('tw').innerHTML=`<table class="grid">${colgroup}<thead>${h1}${h2}</thead><tbody>${body}</tbody></table>`;
   $('tw').querySelectorAll('td.cell[data-cid]').forEach(td=>td.addEventListener('click',onCell));
-  $('tw').querySelectorAll('td.cn').forEach(td=>td.addEventListener('click',()=>openC(td.dataset.e)));
+  $('tw').querySelectorAll('td.cn').forEach(td=>td.addEventListener('click',()=>{
+    if(!editMode){toast('Caselle bloccate: premi "Modifica caselle" per modificare i clienti');return;}
+    openC(td.dataset.e);
+  }));
 }
 
 // ========= POPOVER =========
