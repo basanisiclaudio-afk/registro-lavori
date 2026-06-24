@@ -1552,6 +1552,46 @@ td.ic-note{
   }
 }
 
+/* =========================================================
+   V19 — sicurezza iPhone: compilazione bloccata durante lo scroll
+   ========================================================= */
+body.edit-locked td.cell[data-cid]{
+  pointer-events:none!important;
+  cursor:grab!important;
+}
+body.edit-locked td.cell[data-cid]::before,
+body.edit-locked td.cell[data-cid]::after{
+  opacity:.70;
+}
+body.edit-locked td.cell[data-cid]:hover,
+body.edit-locked td.cell[data-cid]:hover::before{
+  outline:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(0,73,115,.06)!important;
+  transform:none!important;
+}
+.btn.edit-lock{
+  border-color:#A8DFF2;
+  background:#F1FBFF;
+  color:#035E83;
+}
+.btn.edit-lock.edit-on{
+  border-color:#00A676;
+  background:linear-gradient(135deg,#00A676,#008B63);
+  color:#FFFFFF;
+}
+.btn.edit-lock.edit-on:hover{
+  background:linear-gradient(135deg,#13B987,#007B58);
+  color:#FFFFFF;
+}
+@media (max-width:640px){
+  .btn.edit-lock{
+    order:20;
+    flex:1 1 100%;
+    justify-content:center;
+  }
+}
+
+
 </style>
 <!-- Fix ChatGPT 2026-06-22: CDN Firebase + anti-blocco cloud -->
 </head>
@@ -1784,6 +1824,7 @@ td.ic-note{
   <button class="btn pri" id="btnDash">Dashboard</button>
   <button class="btn" id="btnLeg">Legenda</button>
   <button class="btn" id="btnAdem">Adempimenti</button>
+  <button class="btn edit-lock" id="btnEditLock" type="button" aria-pressed="false" title="Blocca o sblocca la compilazione delle caselle">🔒 Caselle bloccate</button>
   <div class="sep"></div>
   <button class="btn" id="btnExp">Esporta Excel</button>
   <button class="btn backup" id="btnBackup">Esegui backup</button>
@@ -2395,12 +2436,11 @@ const IVA_OPTS=['MENSILE','TRIMESTRALE'];
 const REGIMI=['ORDINARIA','SEMPLIFICATA','ORDINARIA 398/91','SEMPLIFICATA 398/91','ORDINARIA AG.VIAGGI'];
 const PAGHE_OPTS=['ESTERNO','ATHLETIS','ST. PURSCEDU','ST. BASANISI'];
 const REQUIRED_CATEGORIES=[
-  {id:'encirap', nome:'ENC / IRAP',       per:'annuale', scad:{d:31,m:10,y:2026}},
-  {id:'mod770',  nome:'770',              per:'annuale', scad:{d:31,m:10,y:2026}},
-  {id:'lipe1',   nome:'LI.PE. I TRIM.',   per:'annuale', scad:{d:31,m:5,y:2026}},
-  {id:'lipe2',   nome:'LI.PE. II TRIM.',  per:'annuale', scad:{d:30,m:9,y:2026}},
-  {id:'lipe3',   nome:'LI.PE. III TRIM.', per:'annuale', scad:{d:30,m:11,y:2026}},
-  {id:'lipe4',   nome:'LI.PE. IV TRIM.',  per:'annuale', scad:{d:28,m:2,y:2026}},
+  {id:'mod770',  nome:'770',              per:'annuale', scad:{d:31,m:10,y:2026}, yearOffset:1},
+  {id:'lipe1',   nome:'LI.PE. I TRIM.',   per:'annuale', scad:{d:31,m:5,y:2026},  yearOffset:0},
+  {id:'lipe2',   nome:'LI.PE. II TRIM.',  per:'annuale', scad:{d:30,m:9,y:2026},  yearOffset:0},
+  {id:'lipe3',   nome:'LI.PE. III TRIM.', per:'annuale', scad:{d:30,m:11,y:2026}, yearOffset:0},
+  {id:'lipe4',   nome:'LI.PE. IV TRIM.',  per:'annuale', scad:{d:28,m:2,y:2026},  yearOffset:1},
 ];
 function normKey(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
 function normOp(v){v=String(v||'').trim().toUpperCase();return OPERATORI.includes(v)?v:'';}
@@ -2468,10 +2508,48 @@ function ensureRequiredCategories(){
       if(!c.scad.d)c.scad.d=req.scad.d;
       if(!c.scad.m)c.scad.m=req.scad.m;
       if(!c.scad.y)c.scad.y=req.scad.y;
+      // Aggiorna scadAnni per il range di anni corrente+prossimo:
+      // sovrascrive sempre (corregge dati errati già presenti, es. y:2028 → y:2027).
+      if(req.yearOffset!==undefined && S && S.anno){
+        if(!c.scadAnni)c.scadAnni={};
+        for(let y=S.anno-1;y<=S.anno+2;y++){
+          c.scadAnni[String(y)]={d:req.scad.d,m:req.scad.m,y:y+req.yearOffset};
+        }
+      }
     }else{
       S.categorie.push({id:req.id,nome:req.nome,per:req.per,colore:CAT_COLOR,scad:{...req.scad}});
     }
   });
+}
+const DEPRECATED_CATEGORY_IDS=['encirap'];
+const DEPRECATED_CATEGORY_NAMES=new Set(['ENCIRAP']);
+function isDeprecatedCategory(c){
+  return !!c && (DEPRECATED_CATEGORY_IDS.includes(c.id) || DEPRECATED_CATEGORY_NAMES.has(normKey(c.nome)));
+}
+function purgeDeprecatedCategories(){
+  if(!S || !Array.isArray(S.categorie)) return false;
+  const removeIds=S.categorie.filter(isDeprecatedCategory).map(c=>c.id);
+  if(!removeIds.length) return false;
+  const removeSet=new Set(removeIds);
+  S.categorie=S.categorie.filter(c=>!removeSet.has(c.id));
+  if(Array.isArray(S.clienti)){
+    S.clienti.forEach(cl=>{
+      removeIds.forEach(id=>{
+        if(cl.celle) delete cl.celle[id];
+        if(cl.appl) delete cl.appl[id];
+        if(cl.applAnno){
+          Object.keys(cl.applAnno).forEach(y=>{
+            if(cl.applAnno[y]){
+              delete cl.applAnno[y][id];
+              if(Object.keys(cl.applAnno[y]).length===0) delete cl.applAnno[y];
+            }
+          });
+          if(Object.keys(cl.applAnno).length===0) delete cl.applAnno;
+        }
+      });
+    });
+  }
+  return true;
 }
 function defCat(){
   return [
@@ -2481,7 +2559,6 @@ function defCat(){
     {id:'diciva',  nome:'DIC.IVA',            per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:4,y:2026}},
     {id:'scirap',  nome:'SC / IRAP',          per:'annuale',  colore:CAT_COLOR, scad:{d:31,m:10,y:2026}},
     {id:'depbil',  nome:'DEP.TO BILANCIO',    per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:5,y:2026}},
-    {id:'encirap', nome:'ENC / IRAP',         per:'annuale',  colore:CAT_COLOR, scad:{d:31,m:10,y:2026}},
     {id:'mod770',  nome:'770',                per:'annuale',  colore:CAT_COLOR, scad:{d:31,m:10,y:2026}},
     {id:'lipe1',   nome:'LI.PE. I TRIM.',     per:'annuale',  colore:CAT_COLOR, scad:{d:31,m:5,y:2026}},
     {id:'lipe2',   nome:'LI.PE. II TRIM.',    per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:9,y:2026}},
@@ -2532,9 +2609,29 @@ function uid(){return 'c'+Math.random().toString(36).slice(2,10);}
 // ========= STATO =========
 let S=null;
 let __uid=null;
+let editMode=false;
+function setEditMode(on){
+  editMode=!!on;
+  if(document.body){
+    document.body.classList.toggle('edit-unlocked',editMode);
+    document.body.classList.toggle('edit-locked',!editMode);
+  }
+  const btn=$('btnEditLock');
+  if(btn){
+    btn.textContent=editMode?'✏️ Modifica caselle attiva':'🔒 Caselle bloccate';
+    btn.classList.toggle('edit-on',editMode);
+    btn.setAttribute('aria-pressed',editMode?'true':'false');
+    btn.title=editMode?'Le caselle sono compilabili. Premi per bloccarle.':'Le caselle sono bloccate: puoi scorrere senza compilare per errore.';
+  }
+  try{closePop();}catch(_e){}
+}
+function toggleEditMode(){
+  setEditMode(!editMode);
+  toast(editMode?'Modifica caselle attiva':'Caselle bloccate: puoi scorrere senza rischi');
+}
 // Dati reali di partenza (stato avanzamento lavori al momento della migrazione su cloud).
 // Vengono caricati su Firestore SOLO al primissimo accesso, se non esiste ancora un documento.
-const SEED_DATA = {"anno":2025,"categorie":[{"id":"regiva","nome":"REGISTRAZIONI IVA","per":"mensile","colore":"#F7F2E2"},{"id":"prnota","nome":"PRIMA NOTA","per":"mensile","colore":"#F7F2E2"},{"id":"cu","nome":"CU","per":"annuale","colore":"#F7F2E2","scad":{"d":16,"m":3,"y":2026},"scadAnni":{"2025":{"d":16,"m":3,"y":2026},"2026":{"d":16,"m":3,"y":2027}}},{"id":"diciva","nome":"DIC.IVA","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":4,"y":2026},"scadAnni":{"2025":{"d":30,"m":4,"y":2026},"2026":{"d":30,"m":4,"y":2027}}},{"id":"scirap","nome":"SC / IRAP","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":10,"y":2026},"scadAnni":{"2025":{"d":31,"m":10,"y":2026},"2026":{"d":31,"m":10,"y":2027}}},{"id":"depbil","nome":"DEP.TO BILANCIO","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":5,"y":2026},"scadAnni":{"2025":{"d":30,"m":5,"y":2026},"2026":{"d":30,"m":5,"y":2027}}},{"id":"cflxte10e","nome":"ENC / IRAP ANNUALI","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":10,"y":2026},"scadAnni":{"2025":{"d":31,"m":10,"y":2026},"2026":{"d":31,"m":10,"y":2027}}},{"id":"cyhg6v9as","nome":"ENC / IRAP INFRANNUALI","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":4,"y":2026},"scadAnni":{"2025":{"d":30,"m":4,"y":2026},"2026":{"d":30,"m":4,"y":2027}}},{"id":"cza6xdkfk","nome":"770","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":10,"y":2026},"scadAnni":{"2025":{"d":31,"m":10,"y":2026},"2026":{"d":31,"m":10,"y":2027}}},{"id":"cxjlfpamj","nome":"LI.PE. I TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":5,"y":2026},"scadAnni":{"2025":{"d":31,"m":5,"y":2025},"2026":{"d":31,"m":5,"y":2026}}},{"id":"cevrq8ot3","nome":"LI.PE. II TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":9,"y":2026},"scadAnni":{"2025":{"d":30,"m":9,"y":2025},"2026":{"d":30,"m":9,"y":2026}}},{"id":"c9irnaf7p","nome":"LI.PE. III TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":11,"y":2026},"scadAnni":{"2025":{"d":30,"m":11,"y":2025},"2026":{"d":30,"m":11,"y":2026}}},{"id":"cvckwvqbd","nome":"LI.PE. IV TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":28,"m":2,"y":2026},"scadAnni":{"2025":{"d":28,"m":2,"y":2026},"2026":{"d":28,"m":2,"y":2028}}}],"clienti":[{"id":"casdg3kre","n":1,"rs":"3GT SRL","op":"DEBORA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"ESTERNO","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":["done"]},"cevrq8ot3":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2025":{"0":"done"},"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false}},{"id":"c5o4bcrto","n":2,"rs":"AGAPE STABLE SSD SRL","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"ST. PURSCEDU","note":"1° ESERCIZIO AL 31.12.2026","celle":{"c9irnaf7p":{"2025":{"0":null}},"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":{"0":"done","1":"done","2":"done","3":"done","4":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":true,"cu":true,"diciva":false,"scirap":true,"depbil":true,"cflxte10e":false,"cza6xdkfk":true,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false},"applAnno":{"2025":{"regiva":false,"prnota":false,"cu":false,"scirap":false,"depbil":false,"cza6xdkfk":false}}},{"id":"cb9oqucln","n":3,"rs":"ASD POL CASSINA NUOVA","op":"DEBORA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"SEMPLIFICATA 398/91","paghe":"","note":"ASD CON GESTIONE CONTABILE","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":null}},"cvckwvqbd":{"2025":{"0":null}},"depbil":{"2026":{"0":null}},"cza6xdkfk":{"2025":{"0":"wip"}},"cyhg6v9as":{"2025":{"0":"done"}}},"eserc":"infrannuale","eserc_ini":"2025-07-01","eserc_fine":"2026-06-30","tipo":"ASD","appl":{"diciva":false,"scirap":false,"depbil":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false}},{"id":"c3op4viex","n":4,"rs":"BBIKE SSD SRL","op":"CLAUDIA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"ISCRIZIONE 08.08.2025","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2026":[null]},"cevrq8ot3":{"2026":[null]},"c9irnaf7p":{"2026":[null]},"cvckwvqbd":{"2026":[null]},"diciva":{"2026":{"0":null}},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"cu1yb8t7g","n":5,"rs":"CIRCOLO IPPICO DI CASTELLAZZO SSD SRL","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"ATHLETIS","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2026":{"0":null}},"diciva":{"2026":{"0":null}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"cjb4m9zft","n":6,"rs":"FIGINO REAL ESTATE SRL","op":"CLAUDIO","fat":"FATT. A.LE","imp":"€ 500,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"NO MOVIMENTATA CONTABILIZZAZIONE ANNUALE IN FASE DI DEPOSITO BILANCIO","celle":{"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":{"0":null}},"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":{"0":"done","1":"done","2":"done","3":"done","4":"done"}},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":true,"cu":true,"diciva":true,"scirap":true,"depbil":true,"cflxte10e":false,"cza6xdkfk":true,"cevrq8ot3":true,"c9irnaf7p":true,"cvckwvqbd":true,"cyhg6v9as":false}},{"id":"c7eikkc97","n":7,"rs":"GEMAR SRL","op":"SIMONA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"MENSILE","regime":"ORDINARIA","paghe":"ESTERNO","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"wip","10":"wip","11":"wip"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":["done"]},"cevrq8ot3":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false}},{"id":"c0s8lr8y9","n":8,"rs":"GGIOIA SSD SRL","op":"MIRKO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2026":[null]},"cevrq8ot3":{"2026":[null]},"c9irnaf7p":{"2026":[null]},"cvckwvqbd":{"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"clsksn4sn","n":9,"rs":"MJR SSD SRL","op":"DEBORA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2026":{"0":null}},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"ce4x8y41f","n":10,"rs":"ONORATO GIOVANNI","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"SOLO LI.PE. E D.IVA","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"cu":{"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"PROFESSIONISTA","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":false,"cu":false,"scirap":false,"depbil":false,"cflxte10e":false,"cza6xdkfk":false,"cyhg6v9as":false}},{"id":"ci1cxbo9b","n":11,"rs":"POL. BARANZATESE SSD SRL","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"TRASFORMAZIONE DA ASD IN SSD IN 2026","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2026":[null]},"depbil":{"2026":{"0":null}},"cflxte10e":{"2025":{"0":"done"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"scirap":true,"depbil":true,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false},"applAnno":{"2025":{"scirap":false,"depbil":false},"2026":{"cflxte10e":false}}},{"id":"cb3q5bez0","n":12,"rs":"REGION VERONA SRL","op":"SIMONA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"wip"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":["done"]},"cevrq8ot3":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false}},{"id":"creon6upj","n":13,"rs":"RG HOLDING SRL","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 175,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"PRIMA NOTA ANNUALE PER POCHI MOVIMENTI","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":null},"2026":{"11":null}},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false,"prnota":false}},{"id":"c2o5xjqpa","n":14,"rs":"ROGER GROUP SPA","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 120,00","iva":"MENSILE","regime":"ORDINARIA","paghe":"","note":"CONTABILITA' GESTITA IN AZIENDA","celle":{"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"wip"},"2026":{"0":null}},"scirap":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SPA","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"regiva":false,"prnota":false,"cflxte10e":false,"cyhg6v9as":false}},{"id":"cgpm50ovh","n":15,"rs":"SPORT SANT'ANNA 2025 SSD SRL","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 200,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"csap1a87m","n":16,"rs":"TOUR EVENT ORGANIZATION SRL","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 200,00","iva":"TRIMESTRALE","regime":"ORDINARIA AG.VIAGGI","paghe":"ST. BASANISI","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":true,"cu":true,"diciva":true,"scirap":true,"depbil":true,"cflxte10e":false,"cyhg6v9as":false,"cza6xdkfk":true,"cevrq8ot3":true,"c9irnaf7p":true,"cvckwvqbd":true}}]};
+const SEED_DATA = {"anno":2025,"categorie":[{"id":"regiva","nome":"REGISTRAZIONI IVA","per":"mensile","colore":"#F7F2E2"},{"id":"prnota","nome":"PRIMA NOTA","per":"mensile","colore":"#F7F2E2"},{"id":"cu","nome":"CU","per":"annuale","colore":"#F7F2E2","scad":{"d":16,"m":3,"y":2026},"scadAnni":{"2025":{"d":16,"m":3,"y":2026},"2026":{"d":16,"m":3,"y":2027}}},{"id":"diciva","nome":"DIC.IVA","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":4,"y":2026},"scadAnni":{"2025":{"d":30,"m":4,"y":2026},"2026":{"d":30,"m":4,"y":2027}}},{"id":"scirap","nome":"SC / IRAP","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":10,"y":2026},"scadAnni":{"2025":{"d":31,"m":10,"y":2026},"2026":{"d":31,"m":10,"y":2027}}},{"id":"depbil","nome":"DEP.TO BILANCIO","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":5,"y":2026},"scadAnni":{"2025":{"d":30,"m":5,"y":2026},"2026":{"d":30,"m":5,"y":2027}}},{"id":"cflxte10e","nome":"ENC / IRAP ANNUALI","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":10,"y":2026},"scadAnni":{"2025":{"d":31,"m":10,"y":2026},"2026":{"d":31,"m":10,"y":2027}}},{"id":"cyhg6v9as","nome":"ENC / IRAP INFRANNUALI","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":4,"y":2026},"scadAnni":{"2025":{"d":30,"m":4,"y":2026},"2026":{"d":30,"m":4,"y":2027}}},{"id":"cza6xdkfk","nome":"770","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":10,"y":2026},"scadAnni":{"2025":{"d":31,"m":10,"y":2026},"2026":{"d":31,"m":10,"y":2027}}},{"id":"cxjlfpamj","nome":"LI.PE. I TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":31,"m":5,"y":2026},"scadAnni":{"2025":{"d":31,"m":5,"y":2025},"2026":{"d":31,"m":5,"y":2026}}},{"id":"cevrq8ot3","nome":"LI.PE. II TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":9,"y":2026},"scadAnni":{"2025":{"d":30,"m":9,"y":2025},"2026":{"d":30,"m":9,"y":2026}}},{"id":"c9irnaf7p","nome":"LI.PE. III TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":30,"m":11,"y":2026},"scadAnni":{"2025":{"d":30,"m":11,"y":2025},"2026":{"d":30,"m":11,"y":2026}}},{"id":"cvckwvqbd","nome":"LI.PE. IV TRIM.","per":"annuale","colore":"#F7F2E2","scad":{"d":28,"m":2,"y":2026},"scadAnni":{"2025":{"d":28,"m":2,"y":2026},"2026":{"d":28,"m":2,"y":2027}}}],"clienti":[{"id":"casdg3kre","n":1,"rs":"3GT SRL","op":"DEBORA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"ESTERNO","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":["done"]},"cevrq8ot3":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2025":{"0":"done"},"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false}},{"id":"c5o4bcrto","n":2,"rs":"AGAPE STABLE SSD SRL","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"ST. PURSCEDU","note":"1° ESERCIZIO AL 31.12.2026","celle":{"c9irnaf7p":{"2025":{"0":null}},"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":{"0":"done","1":"done","2":"done","3":"done","4":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":true,"cu":true,"diciva":false,"scirap":true,"depbil":true,"cflxte10e":false,"cza6xdkfk":true,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false},"applAnno":{"2025":{"regiva":false,"prnota":false,"cu":false,"scirap":false,"depbil":false,"cza6xdkfk":false}}},{"id":"cb9oqucln","n":3,"rs":"ASD POL CASSINA NUOVA","op":"DEBORA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"SEMPLIFICATA 398/91","paghe":"","note":"ASD CON GESTIONE CONTABILE","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":null}},"cvckwvqbd":{"2025":{"0":null}},"depbil":{"2026":{"0":null}},"cza6xdkfk":{"2025":{"0":"wip"}},"cyhg6v9as":{"2025":{"0":"done"}}},"eserc":"infrannuale","eserc_ini":"2025-07-01","eserc_fine":"2026-06-30","tipo":"ASD","appl":{"diciva":false,"scirap":false,"depbil":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false}},{"id":"c3op4viex","n":4,"rs":"BBIKE SSD SRL","op":"CLAUDIA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"ISCRIZIONE 08.08.2025","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2026":[null]},"cevrq8ot3":{"2026":[null]},"c9irnaf7p":{"2026":[null]},"cvckwvqbd":{"2026":[null]},"diciva":{"2026":{"0":null}},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"cu1yb8t7g","n":5,"rs":"CIRCOLO IPPICO DI CASTELLAZZO SSD SRL","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"ATHLETIS","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2026":{"0":null}},"diciva":{"2026":{"0":null}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"cjb4m9zft","n":6,"rs":"FIGINO REAL ESTATE SRL","op":"CLAUDIO","fat":"FATT. A.LE","imp":"€ 500,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"NO MOVIMENTATA CONTABILIZZAZIONE ANNUALE IN FASE DI DEPOSITO BILANCIO","celle":{"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":{"0":null}},"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":{"0":"done","1":"done","2":"done","3":"done","4":"done"}},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":true,"cu":true,"diciva":true,"scirap":true,"depbil":true,"cflxte10e":false,"cza6xdkfk":true,"cevrq8ot3":true,"c9irnaf7p":true,"cvckwvqbd":true,"cyhg6v9as":false}},{"id":"c7eikkc97","n":7,"rs":"GEMAR SRL","op":"SIMONA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"MENSILE","regime":"ORDINARIA","paghe":"ESTERNO","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"wip","10":"wip","11":"wip"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":["done"]},"cevrq8ot3":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false}},{"id":"c0s8lr8y9","n":8,"rs":"GGIOIA SSD SRL","op":"MIRKO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2026":[null]},"cevrq8ot3":{"2026":[null]},"c9irnaf7p":{"2026":[null]},"cvckwvqbd":{"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"clsksn4sn","n":9,"rs":"MJR SSD SRL","op":"DEBORA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2026":{"0":null}},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"ce4x8y41f","n":10,"rs":"ONORATO GIOVANNI","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"SOLO LI.PE. E D.IVA","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"cu":{"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"PROFESSIONISTA","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":false,"cu":false,"scirap":false,"depbil":false,"cflxte10e":false,"cza6xdkfk":false,"cyhg6v9as":false}},{"id":"ci1cxbo9b","n":11,"rs":"POL. BARANZATESE SSD SRL","op":"CLAUDIO","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"TRASFORMAZIONE DA ASD IN SSD IN 2026","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2026":[null]},"depbil":{"2026":{"0":null}},"cflxte10e":{"2025":{"0":"done"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"scirap":true,"depbil":true,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false},"applAnno":{"2025":{"scirap":false,"depbil":false},"2026":{"cflxte10e":false}}},{"id":"cb3q5bez0","n":12,"rs":"REGION VERONA SRL","op":"SIMONA","fat":"FATT. FORFAIT M.LE","imp":"€ 0,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"wip"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"cxjlfpamj":{"2025":{"0":"done"},"2026":["done"]},"cevrq8ot3":{"2025":{"0":"done"},"2026":[null]},"c9irnaf7p":{"2025":{"0":"done"},"2026":[null]},"cvckwvqbd":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false}},{"id":"creon6upj","n":13,"rs":"RG HOLDING SRL","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 175,00","iva":"TRIMESTRALE","regime":"ORDINARIA","paghe":"","note":"PRIMA NOTA ANNUALE PER POCHI MOVIMENTI","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":null},"2026":{"11":null}},"scirap":{"2025":{"0":"wip"}},"depbil":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"cflxte10e":false,"cyhg6v9as":false,"prnota":false}},{"id":"c2o5xjqpa","n":14,"rs":"ROGER GROUP SPA","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 120,00","iva":"MENSILE","regime":"ORDINARIA","paghe":"","note":"CONTABILITA' GESTITA IN AZIENDA","celle":{"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"wip"},"2026":{"0":null}},"scirap":{"2025":{"0":"wip"}},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SPA","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"regiva":false,"prnota":false,"cflxte10e":false,"cyhg6v9as":false}},{"id":"cgpm50ovh","n":15,"rs":"SPORT SANT'ANNA 2025 SSD SRL","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 200,00","iva":"TRIMESTRALE","regime":"ORDINARIA 398/91","paghe":"","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"diciva":false,"cflxte10e":false,"cxjlfpamj":false,"cevrq8ot3":false,"c9irnaf7p":false,"cvckwvqbd":false,"cyhg6v9as":false}},{"id":"csap1a87m","n":16,"rs":"TOUR EVENT ORGANIZATION SRL","op":"CLAUDIO","fat":"FATT. M.LE","imp":"€ 200,00","iva":"TRIMESTRALE","regime":"ORDINARIA AG.VIAGGI","paghe":"ST. BASANISI","note":"","celle":{"regiva":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":["done","done","done","done","done",null,null,null,null,null,null,null]},"prnota":{"2025":{"0":"done","1":"done","2":"done","3":"done","4":"done","5":"done","6":"done","7":"done","8":"done","9":"done","10":"done","11":"done"},"2026":[null,null,null,null,null,null,null,null,null,null,null,null]},"cu":{"2025":{"0":"done"},"2026":[null]},"diciva":{"2025":{"0":"done"},"2026":[null]},"scirap":{"2025":{"0":"done"},"2026":[null]},"depbil":{"2025":{"0":"done"},"2026":[null]},"cza6xdkfk":{"2025":{"0":"wip"}},"cxjlfpamj":{"2025":{"0":"done"},"2026":{"0":"done"}},"cevrq8ot3":{"2025":{"0":"done"}},"c9irnaf7p":{"2025":{"0":"done"}},"cvckwvqbd":{"2025":{"0":"done"}}},"tipo":"SRL","eserc":"annuale","eserc_ini":"","eserc_fine":"","appl":{"prnota":true,"cu":true,"diciva":true,"scirap":true,"depbil":true,"cflxte10e":false,"cyhg6v9as":false,"cza6xdkfk":true,"cevrq8ot3":true,"c9irnaf7p":true,"cvckwvqbd":true}}]};
 const SHARED_DOC_ID='basanisi-registro-lavori-unico';
 function registroCloudDoc(){
   return firebase.firestore().collection('registri').doc(SHARED_DOC_ID);
@@ -2577,6 +2674,7 @@ function migrateState(allowSave=true){
   let changed=false;
   const beforeCats=JSON.stringify(S.categorie||[]);
   ensureRequiredCategories();
+  if(purgeDeprecatedCategories()) changed=true;
   if(JSON.stringify(S.categorie||[])!==beforeCats) changed=true;
   if(S.categorie&&S.categorie.length){
     S.categorie.forEach(c=>{
@@ -2741,19 +2839,44 @@ const $=id=>document.getElementById(id);
 // ========= MOBILE / TOUCH HELPERS =========
 function installTouchFallback(){
   // Su iPhone/iPad alcune anteprime dei file HTML non trasformano bene il tap in click.
-  // Questo fallback rende pulsanti, celle e voci cliccabili anche con touch.
+  // V19: non trasformo più lo scroll in click sulle caselle; il tap è valido solo se il dito
+  // resta quasi fermo e solo quando la modalità modifica è attiva.
   let lastTouch=0;
+  let touchStart=null;
+  let touchMoved=false;
+
+  document.addEventListener('touchstart', e=>{
+    const t=e.touches&&e.touches[0];
+    touchStart=t?{x:t.clientX,y:t.clientY,time:Date.now()}:null;
+    touchMoved=false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!touchStart) return;
+    const t=e.touches&&e.touches[0];
+    if(!t) return;
+    const dx=Math.abs(t.clientX-touchStart.x);
+    const dy=Math.abs(t.clientY-touchStart.y);
+    if(dx>10 || dy>10) touchMoved=true;
+  }, {passive:true});
+
   document.addEventListener('touchend', e=>{
     const el=e.target.closest('button,.btn,.ibtn,.nalink,td.cell[data-cid],td.cn,.late-item');
     if(!el) return;
     if(e.target.closest('input,select,textarea,label')) return;
+    if(touchMoved) return;
+    if(el.matches('td.cell[data-cid]') && !editMode){
+      toast('Caselle bloccate: premi “Modifica caselle” per compilarle');
+      return;
+    }
     lastTouch=Date.now();
     if(e.cancelable) e.preventDefault();
     el.click();
   }, {passive:false});
+
   document.addEventListener('click', e=>{
     // Evita doppi click generati subito dopo un touch manuale.
-    if(Date.now()-lastTouch<60 && e.detail===0){
+    if(Date.now()-lastTouch<80 && e.detail===0){
       if(e.cancelable) e.preventDefault();
     }
   }, true);
@@ -3009,6 +3132,11 @@ function renderTable(){
 // ========= POPOVER =========
 let pt=null;
 function onCell(e){
+  if(!editMode){
+    toast('Caselle bloccate: premi “Modifica caselle” per compilarle');
+    closePop();
+    return;
+  }
   const td=e.currentTarget;
   pt={cid:td.dataset.cid,ccat:td.dataset.cat,idx:+td.dataset.idx,td};
   const cl=S.clienti.find(c=>c.id===pt.cid);
@@ -3037,6 +3165,7 @@ function onCell(e){
 }
 function closePop(){$('pop').classList.remove('on');pt=null;}
 function applyS(st){
+  if(!editMode){toast('Caselle bloccate: premi “Modifica caselle” per compilarle');closePop();return;}
   if(!pt) return;
   const cl=S.clienti.find(c=>c.id===pt.cid);
   setGlobalAppl(cl,pt.ccat,true);
@@ -3068,7 +3197,7 @@ function openC(id){
     $('btnDel').style.display='inline-flex';
   } else {
     $('tC').textContent='Nuovo cliente';
-    ['f_rs','f_op','f_fat','f_imp','f_reg','f_pag','f_note','f_eserc_ini','f_eserc_fine'].forEach(id=>$(id).value='');
+    ['f_rs','f_op','f_fat','f_imp','f_reg','f_pag','f_note','f_eserc_ini','f_eserc_fine'].forEach(fieldId=>$(fieldId).value='');
     $('f_tipo').value='SRL'; $('f_iva').value=''; $('f_eserc').value='annuale';
     $('eserc_dates_wrap').style.display='none';
     $('btnDel').style.display='none';
@@ -3391,7 +3520,8 @@ function jumpToCell(item){
   if(!td)return;
   td.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});
   td.classList.add('flash');
-  setTimeout(()=>td.click(),450);
+  if(editMode) setTimeout(()=>td.click(),450);
+  else setTimeout(()=>toast('Caselle bloccate: premi “Modifica caselle” per intervenire'),450);
   setTimeout(()=>td.classList.remove('flash'),1400);
 }
 
@@ -3535,6 +3665,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('f_imp').addEventListener('blur',()=>{$('f_imp').value=formatMoney($('f_imp').value);});
   $('btnDel').addEventListener('click',delC);
   $('btnAdem').addEventListener('click',()=>{renderCats();openOv('ovA');});
+  $('btnEditLock').addEventListener('click',toggleEditMode);
+  setEditMode(false);
   $('btnAddCat').addEventListener('click',addCat);
   $('btnExp').addEventListener('click',esporta);
   $('btnBackup').addEventListener('click',backupData);
