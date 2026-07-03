@@ -2444,6 +2444,7 @@ body.edit-locked #annoSel{
 .comp-ditta-desc-list .comp-desc-row{grid-template-columns:auto auto minmax(160px,1fr) minmax(170px,1.2fr);align-items:center;}
 @media (max-width:760px){.comp-ditta-desc-list .comp-desc-row{grid-template-columns:1fr}.comp-desc-periodic{width:max-content;}}
   .rubrica-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .rubrica-select-hint{display:none;margin:-2px 0 10px;padding:8px 10px;border:1px solid #BDE6F5;background:#EAF8FE;color:#0B5F86;border-radius:12px;font-size:11px;font-weight:800;}
   .comp-ant-multi{display:grid;gap:10px;}
   .comp-ant-row{border:1px solid #D7E8F2;background:#fff;border-radius:16px;padding:11px 12px;display:grid;grid-template-columns:170px 130px 1fr;gap:10px;align-items:center;}
   .comp-ant-row label{display:flex;align-items:center;gap:9px;color:#043B5C;font-weight:850;font-size:12px;}
@@ -3643,6 +3644,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
     <div class="mh"><h2>Gestione clienti</h2><button class="xbtn" data-cl="ovRubrica">×</button></div>
     <div class="mb">
       <div class="fi"><label>Cerca in Gestione clienti</label><input type="text" id="rubSearch" placeholder="Cerca ditta, codice fiscale, partita iva, email, descrizione compenso..."></div>
+      <div class="rubrica-select-hint" id="rubSelectHint">Premi “Seleziona” per riportare l'anagrafica nel rigo di Compensi e incarichi.</div>
       <div class="rubrica-list" id="rubList"></div>
     </div>
     <div class="mf"><button class="btn" id="btnRubricaAdd" type="button" style="margin-right:auto">+ Aggiungi ditta</button><button class="btn pri" data-cl="ovRubrica">Chiudi</button></div>
@@ -5149,6 +5151,7 @@ let __compEditMandatarioData=null;
 let __compEditDraftDescrizioni={};
 let __compEditDraftAnticipazioni={enabled:false,items:[]};
 let __compAnagSnapshot=null;
+let __rubricaSelectContext=null;
 
 function sentenceCase(v){
   v=String(v==null?'':v);
@@ -5641,6 +5644,7 @@ function renderCompensiTable(){
     const dragAttr=editMode?' draggable="true"':' disabled aria-disabled="true"';
     return `<tr data-comp-id="${compEsc(r.id)}" draggable="false">
       <td class="comp-row-actions"><div class="comp-row-actions-inner">
+        <button type="button" class="comp-edit-row" data-comp-edit="${compEsc(r.id)}" title="Modifica incarico" aria-label="Modifica incarico"${lockedAttr}>Modifica</button>
         <button type="button" class="comp-drag-handle" ${dragAttr} data-comp-drag="${compEsc(r.id)}" title="Tieni premuto e sposta la riga" aria-label="Sposta riga"><span></span><span></span><span></span></button>
         <button type="button" class="comp-del-row" data-comp-del="${compEsc(r.id)}" title="Elimina riga" aria-label="Elimina riga"${lockedAttr}>×</button>
       </div></td>
@@ -5649,9 +5653,9 @@ function renderCompensiTable(){
         <select class="comp-native-select comp-year-select" data-comp-field="anno" data-id="${compEsc(r.id)}"${lockedAttr}>${compYears().map(y=>`<option value="${y}"${String(y)===String((r.periodo||{}).anno||S.anno)?' selected':''}>${y}</option>`).join('')}</select>
       </div></td>
       <td><select class="comp-native-select comp-status-select ${compStatusClass(r.stato)}" data-comp-field="stato" data-id="${compEsc(r.id)}"${lockedAttr}>${COMP_STATI.map(st=>`<option value="${compEsc(st)}"${st===r.stato?' selected':''}>${st}</option>`).join('')}</select></td>
-      <td><div class="comp-link business-name comp-static-field" data-no-case>${compEsc(compAnagName(r.cliente,'Carica cliente da Gestione clienti'))}</div></td>
-      <td><div class="comp-link business-name comp-static-field" data-no-case>${compEsc(compAnagName(r.mandatario,'Carica mandatario da Gestione clienti'))}</div></td>
-      <td><div class="comp-desc-static" data-no-case>${compEsc(compDescSummary(r))}<span class="comp-desc-muted">Gestito da Gestione clienti</span></div></td>
+      <td><button type="button" class="comp-link business-name comp-static-field comp-inline-open" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="cliente" title="Modifica incarico e carica cliente da Gestione clienti"${lockedAttr}>${compEsc(compAnagName(r.cliente,'Carica cliente da Gestione clienti'))}</button></td>
+      <td><button type="button" class="comp-link business-name comp-static-field comp-inline-open" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="mandatario" title="Modifica incarico e carica mandatario da Gestione clienti"${lockedAttr}>${compEsc(compAnagName(r.mandatario,'Carica mandatario da Gestione clienti'))}</button></td>
+      <td><button type="button" class="comp-desc-static comp-inline-open comp-inline-desc" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="cliente" title="Modifica incarico: descrizione gestita da Gestione clienti"${lockedAttr}>${compEsc(compDescSummary(r))}<span class="comp-desc-muted">Gestito da Gestione clienti</span></button></td>
       <td><input class="comp-money-input" data-comp-field="lordo" data-id="${compEsc(r.id)}" value="${compEsc(formatMoney(r.lordo||''))}" inputmode="decimal" placeholder="€ 0,00"${lockedAttr}></td>
       <td class="comp-center"><input type="checkbox" class="comp-big-check" data-comp-field="rivalsaInps" data-id="${compEsc(r.id)}" ${r.rivalsaInps?'checked':''}${lockedAttr}></td>
       <td class="comp-center"><label class="comp-ant-cell"><input type="checkbox" class="comp-big-check" data-comp-field="anticipazioni" data-id="${compEsc(r.id)}" ${ant.enabled?'checked':''}${lockedAttr}> <button type="button" class="comp-pill-btn" data-comp-ant="${compEsc(r.id)}"${lockedAttr}>${compEsc(compAntSummary(ant))}</button></label></td>
@@ -5722,6 +5726,22 @@ function installCompensiTableHandlers(){
     e.stopPropagation();
     updateCompensoField(opt.dataset.id,opt.dataset.compField,{value:opt.dataset.value});
     closeCompDropdowns();
+  }));
+  $('tw').querySelectorAll('[data-comp-edit]').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(!editMode){toast('Modalità visualizzazione attiva: premi “Modifica caselle attiva” dal Portale per modificare');return;}
+    const focusTarget=b.dataset.compFocus||'';
+    if(b.classList.contains('comp-inline-open') && (focusTarget==='cliente'||focusTarget==='mandatario')){
+      openRubricaForCompenso(b.dataset.compEdit,focusTarget);
+      return;
+    }
+    openCompensoEditor(b.dataset.compEdit);
+    if(focusTarget){
+      setTimeout(()=>{
+        const sel=$(focusTarget==='mandatario'?'ce_mandatario_rubrica':'ce_cliente_rubrica');
+        if(sel){ sel.focus(); sel.scrollIntoView({block:'center',behavior:'smooth'}); }
+      },80);
+    }
   }));
   $('tw').querySelectorAll('[data-comp-anag]').forEach(b=>b.addEventListener('click',()=>openCompAnag(b.dataset.id,b.dataset.compAnag)));
   $('tw').querySelectorAll('[data-comp-ant]').forEach(b=>b.addEventListener('click',()=>openCompAnt(b.dataset.compAnt)));
@@ -6256,23 +6276,100 @@ function loadAnagFromRubrica(id){
   fillAnagForm(applyAnagTargetRoles(JSON.parse(JSON.stringify(rec)),side));
   toast('Dati caricati da Gestione clienti');
 }
-function openRubrica(){
+function openRubrica(context){
+  if(context && context.target && context.currentTarget) context=null;
   ensureRubricaState();
   __compAnagTarget=null;
+  __rubricaSelectContext=context||null;
+  const h=document.querySelector('#ovRubrica .mh h2');
+  if(h){
+    if(__rubricaSelectContext && __rubricaSelectContext.side) h.textContent='Seleziona '+(__rubricaSelectContext.side==='mandatario'?'mandatario':'cliente');
+    else h.textContent='Gestione clienti';
+  }
+  const hint=$('rubSelectHint');
+  if(hint){
+    hint.style.display=__rubricaSelectContext?'block':'';
+    hint.textContent=__rubricaSelectContext?('Premi “Seleziona” per riportare questa anagrafica come '+(__rubricaSelectContext.side==='mandatario'?'mandatario':'cliente')+' nel rigo aperto.'):('Premi “Seleziona” dopo aver aperto la Gestione clienti dalla casella Cliente/Mandatario del rigo.');
+  }
   if($('rubSearch')) $('rubSearch').value='';
   renderRubricaList();
   openOv('ovRubrica');
+}
+function openRubricaForCompenso(id,side){
+  if(!editMode){toast('Modalità visualizzazione attiva: premi “Modifica caselle attiva” dal Portale per selezionare');return;}
+  const r=compById(id);
+  if(!r){toast('Rigo incarico non trovato');return;}
+  openRubrica({type:'compenso',id,side});
+}
+function applyDittaCompensoToCompRow(row,a){
+  if(!row||!a) return;
+  if(a.compensoLordo||a.imp) row.lordo=formatMoney(a.compensoLordo||a.imp||'');
+  if(typeof a.rivalsaInps==='boolean') row.rivalsaInps=!!a.rivalsaInps;
+  const d=anagDescrizioniFromRecord(a);
+  if(Object.keys(d).length){
+    row.descrizioni=JSON.parse(JSON.stringify(d));
+    row.descrizione=compDescSummary(row);
+  }else if(a.descrizioneCompenso){
+    row.descrizioni={};
+    row.descrizione=a.descrizioneCompenso;
+  }
+  row.addebitare=compCalcAddebito(row);
+}
+function inferRubricaSelectContext(rec){
+  if(__rubricaSelectContext) return __rubricaSelectContext;
+  if(document.body.dataset.workspace==='compensi'){
+    const rows=compFilteredRows();
+    if(rows.length===1){
+      let side='';
+      if(rec&&rec.isCliente&&!rec.isMandatario) side='cliente';
+      else if(rec&&rec.isMandatario&&!rec.isCliente) side='mandatario';
+      else{
+        const risp=String(prompt('Vuoi riportare questa anagrafica come CLIENTE o come MANDATARIO?','cliente')||'').trim().toLowerCase();
+        if(risp.startsWith('m')) side='mandatario';
+        else if(risp.startsWith('c')) side='cliente';
+      }
+      if(side) return {type:'compenso',id:rows[0].id,side};
+    }
+  }
+  return null;
+}
+function selectRubricaForContext(id){
+  if(!editMode){toast('Modalità visualizzazione attiva: modifiche bloccate su tutto il programma');return;}
+  ensureRubricaState();
+  const rec=(S.rubrica||[]).find(x=>x.id===id);
+  if(!rec){toast('Anagrafica non trovata');return;}
+  const ctx=inferRubricaSelectContext(rec);
+  if(!ctx || !ctx.side){
+    toast('Per selezionare: clicca prima la casella Cliente o Mandatario del rigo in Compensi e incarichi.');
+    return;
+  }
+  if(ctx.type==='compenso'){
+    const r=compById(ctx.id);
+    if(!r){toast('Rigo incarico non trovato');return;}
+    const copy=applyAnagTargetRoles(JSON.parse(JSON.stringify(rec)),ctx.side);
+    copy.rs=upperName(copy.rs||'');
+    r[ctx.side]=copy;
+    if(ctx.side==='cliente') applyDittaCompensoToCompRow(r,copy);
+    save(true);
+    renderCompensiTable();
+    closeOv('ovRubrica');
+    __rubricaSelectContext=null;
+    toast((ctx.side==='mandatario'?'Mandatario':'Cliente')+' selezionato e riportato nel rigo');
+    return;
+  }
 }
 function renderRubricaList(){
   ensureRubricaState();
   const box=$('rubList'); if(!box) return;
   const q=($('rubSearch')&&$('rubSearch').value||'').trim().toUpperCase();
   let rows=(S.rubrica||[]).slice().sort((a,b)=>String(a.rs||'').localeCompare(String(b.rs||''),'it'));
+  if(__rubricaSelectContext && (__rubricaSelectContext.side==='cliente'||__rubricaSelectContext.side==='mandatario')) rows=rows.filter(a=>rubricaMatchesSide(a,__rubricaSelectContext.side));
   if(q) rows=rows.filter(a=>[a.rs,a.cf,a.piva,a.email,a.pec,a.tel,a.citta,a.indirizzo,a.codiceDestinatario,a.compensoLordo,a.compensoAddebitare,a.descrizioneCompenso,Object.keys(a.descrizioniCompenso||{}).join(' '),Object.values(a.descrizioniCompenso||{}).join(' '),Object.keys(a.descrizioniCompensoPeriodiche||{}).join(' '),a.isCliente?'cliente':'',a.isMandatario?'mandatario':''].join(' ').toUpperCase().includes(q));
   box.innerHTML=rows.length?rows.map(a=>`<div class="rubrica-card" data-rub-id="${compEsc(a.id)}">
     <div class="rubrica-card-head"><div><strong class="rubrica-name" data-no-case>${compEsc(upperName(a.rs)||'SENZA NOME')}</strong><div class="rubrica-role-badges">${rubricaRoleBadges(a)}</div><div class="meta">${compEsc(a.personaFisica?'persona fisica':'società/ente')} · cf ${compEsc(a.cf||'—')} · p.iva ${compEsc(a.piva||'—')} · codice destinatario ${compEsc(a.codiceDestinatario||'—')}</div><div class="meta">${compEsc([a.email,a.pec?('PEC '+a.pec):'',a.tel,a.citta].filter(Boolean).join(' · ')||'Nessun contatto inserito')}</div><div class="meta"><span class="comp-meta-strong">Compenso lordo:</span> ${compEsc(formatMoney(a.compensoLordo||a.imp||'')||'—')} · <span class="comp-meta-strong">Rivalsa:</span> ${a.rivalsaInps?'sì':'no'} · <span class="comp-meta-strong">Da addebitare:</span> ${compEsc(formatMoney(a.compensoAddebitare||'')||'—')} · <span class="comp-meta-strong">Descrizione:</span> ${compEsc(a.descrizioneCompenso||'—')} ${anagPeriodicSummary(a.descrizioniCompenso||{},a.descrizioniCompensoPeriodiche||{})?'<span class="comp-desc-periodic-badge">periodico</span>':''}</div></div></div>
-    <div class="rubrica-actions"><button type="button" class="btn" data-rub-edit="${compEsc(a.id)}">Modifica</button><button type="button" class="btn danger" data-rub-del="${compEsc(a.id)}">Elimina</button></div>
+    <div class="rubrica-actions"><button type="button" class="btn pri" data-rub-select="${compEsc(a.id)}">Seleziona</button><button type="button" class="btn" data-rub-edit="${compEsc(a.id)}">Modifica</button><button type="button" class="btn danger" data-rub-del="${compEsc(a.id)}">Elimina</button></div>
   </div>`).join(''):'<div class="ok-msg">Gestione clienti vuota. Premi “+ aggiungi ditta” per inserire cliente o mandatario.</div>';
+  box.querySelectorAll('[data-rub-select]').forEach(b=>b.addEventListener('click',()=>selectRubricaForContext(b.dataset.rubSelect)));
   box.querySelectorAll('[data-rub-edit]').forEach(b=>b.addEventListener('click',()=>openRubricaEditAnag(b.dataset.rubEdit)));
   box.querySelectorAll('[data-rub-del]').forEach(b=>b.addEventListener('click',()=>{
     if(!editMode){toast('Modalità visualizzazione attiva: modifiche bloccate su tutto il programma');return;}
@@ -6755,7 +6852,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('btnCeMandatarioRubrica').addEventListener('click',()=>loadEditorRubrica('mandatario'));
   $('btnCeClienteAnag')?.addEventListener('click',()=>openEditorAnag('cliente'));
   $('btnCeMandatarioAnag')?.addEventListener('click',()=>openEditorAnag('mandatario'));
-  $('btnRubrica').addEventListener('click',openRubrica);
+  $('btnRubrica').addEventListener('click',()=>openRubrica());
   $('btnRubricaAdd').addEventListener('click',openRubricaNewAnag);
   $('rubSearch').addEventListener('input',renderRubricaList);
   $('ce_ant_open_btn').addEventListener('click',()=>openCompAnt('__editor__'));
@@ -7018,6 +7115,61 @@ body[data-workspace="adempimenti"] #btnExpandInfo{font-weight:900;}
 @media (max-width:760px){
   body[data-workspace="adempimenti"]:not(.ademp-expanded) table.grid thead th.cn,
   body[data-workspace="adempimenti"]:not(.ademp-expanded) table.grid tbody td.cn{min-width:125px!important;max-width:125px!important;width:125px!important;}
+}
+
+
+/* =========================================================
+   FIX AZIONI COMPENSI — pulsante esplicito Modifica incarico
+   ========================================================= */
+body[data-workspace="compensi"] table.grid.comp-grid{min-width:1760px!important;}
+.comp-grid th:nth-child(1),.comp-actions-h{width:150px!important;min-width:150px!important;}
+.comp-row-actions{min-width:150px!important;width:150px!important;}
+.comp-row-actions-inner{gap:6px!important;height:52px!important;max-height:52px!important;}
+.comp-edit-row{
+  height:30px!important;
+  min-width:72px!important;
+  padding:0 10px!important;
+  border:1px solid #00AEEF!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#FFFFFF,#EAF8FE)!important;
+  color:#006EA8!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  text-transform:uppercase!important;
+  letter-spacing:.35px!important;
+  cursor:pointer!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-shadow:0 4px 10px rgba(0,119,182,.10)!important;
+}
+.comp-edit-row:hover{background:#DFF5FF!important;border-color:#0077B6!important;color:#034C72!important;}
+.comp-inline-open{
+  width:100%!important;
+  min-height:42px!important;
+  max-height:50px!important;
+  display:block!important;
+  text-align:left!important;
+  border:1px solid #BDE6F5!important;
+  border-radius:12px!important;
+  background:#F8FDFF!important;
+  color:#043B5C!important;
+  padding:7px 10px!important;
+  cursor:pointer!important;
+  overflow:hidden!important;
+  white-space:normal!important;
+  line-height:1.12!important;
+  font-size:10.5px!important;
+  font-weight:850!important;
+}
+.comp-inline-open:hover{background:#EAF8FE!important;border-color:#00AEEF!important;box-shadow:0 0 0 3px rgba(0,174,239,.12)!important;}
+.comp-inline-desc{font-size:10px!important;font-weight:800!important;}
+.comp-inline-desc .comp-desc-muted{display:block;font-size:9px!important;font-weight:800!important;color:#64748B!important;margin-top:2px!important;}
+body.edit-locked[data-workspace="compensi"] .comp-edit-row,
+body.edit-locked[data-workspace="compensi"] .comp-inline-open{pointer-events:none!important;opacity:.72!important;}
+@media (max-width:760px){
+  .comp-grid th:nth-child(1),.comp-actions-h,.comp-row-actions{width:136px!important;min-width:136px!important;}
+  .comp-edit-row{min-width:64px!important;font-size:9px!important;padding:0 8px!important;}
 }
 </style>
 <script id="cruscotto-final-expand-js">
