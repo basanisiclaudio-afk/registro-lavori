@@ -2352,6 +2352,8 @@ body.edit-locked #annoSel{
   .comp-center{text-align:center!important;}
   .comp-big-check{width:20px;height:20px;accent-color:#00AEEF;cursor:pointer;}
   .comp-ant-cell{display:flex;align-items:center;justify-content:center;gap:7px;}
+  .comp-ant-cell .comp-ant-amount{margin-left:0;flex:none;}
+  .comp-ant-stack .comp-pill-btn{padding:5px 8px;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .comp-pill-btn,.comp-risc-btn{border:1px solid #BDE6F5;background:#fff;color:#0B5F86;border-radius:999px;padding:8px 10px;font-size:11px;font-weight:850;cursor:pointer;line-height:1.1;}
   .comp-risc-btn{width:100%;text-align:left;border-radius:14px;white-space:normal;}
   .risc-incassato{background:#ECFDF3!important;color:#027A48!important;border-color:#ABEFC6!important;}
@@ -2401,6 +2403,10 @@ body.edit-locked #annoSel{
   .comp-anag-persona{margin-bottom:12px;}
   .comp-anag-persona .comp-checkline{justify-content:flex-start;}
   .comp-autocalc-note{font-size:10px;color:#0B5F86;font-weight:800;margin-top:4px;text-transform:uppercase;letter-spacing:.35px;}
+.comp-rivalsa-amount,.comp-ant-amount{display:inline-flex;align-items:center;margin-left:auto;padding:3px 8px;border-radius:999px;background:#EAF8FE;border:1px solid #BDE6F5;color:#0B5F86;font-size:11px;font-weight:900;white-space:nowrap;}
+.comp-rivalsa-stack,.comp-ant-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:72px;}
+.comp-rivalsa-stack .comp-rivalsa-amount,.comp-ant-stack .comp-ant-amount{margin-left:0;font-size:10.5px;padding:2px 7px;}
+.comp-calc-help{font-size:9.5px;color:#64748B;font-weight:700;line-height:1.15;text-transform:none;letter-spacing:0;}
 
 
 
@@ -3528,7 +3534,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
       <div class="rg rg3">
         <div class="fi"><label>Periodo di riferimento</label><div class="comp-period-pair"><select id="ce_mese"></select><select id="ce_anno"></select></div></div>
         <div class="fi"><label>Stato incarico</label><select id="ce_stato"><option>non evasa</option><option>in corso</option><option>evasa</option></select></div>
-        <div class="fi"><label>Rivalsa INPS</label><label class="comp-checkline"><input type="checkbox" id="ce_rivalsa"> Applica rivalsa 4%</label></div>
+        <div class="fi"><label>Rivalsa INPS</label><label class="comp-checkline"><input type="checkbox" id="ce_rivalsa"> Applica rivalsa 4% <span class="comp-rivalsa-amount" id="ce_rivalsa_amount">€ 0,00</span></label></div>
       </div>
       <div class="rg rg2">
         <div class="fi"><label>Ragione sociale cliente</label><input type="text" id="ce_cliente_rs" placeholder="Carica cliente da Gestione clienti" readonly><div class="comp-locked-note">Gestisci i dati completi in Gestione clienti.</div></div>
@@ -3547,8 +3553,8 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
       <div class="fi"><label>Descrizione compenso</label><input type="hidden" id="ce_desc"><button type="button" class="comp-desc-btn" data-no-case id="ce_desc_btn" disabled>Descrizione da Gestione clienti<span class="comp-desc-muted">Si compila caricando la ditta dalla Gestione clienti.</span></button></div>
       <div class="rg rg3">
         <div class="fi"><label>Compenso lordo</label><input type="text" id="ce_lordo" inputmode="decimal" placeholder="€ 0,00"></div>
-        <div class="fi"><label>Anticipazioni spese</label><label class="comp-checkline"><input type="checkbox" id="ce_ant_enabled"> Attiva anticipazioni</label></div>
-        <div class="fi"><label>Compenso da addebitare</label><input type="text" id="ce_addeb" inputmode="decimal" placeholder="€ 0,00" readonly><div class="comp-autocalc-note">Calcolo automatico: lordo + rivalsa 4% se vistata + anticipazioni spese</div></div>
+        <div class="fi"><label>Anticipazioni spese</label><label class="comp-checkline"><input type="checkbox" id="ce_ant_enabled"> Attiva anticipazioni <span class="comp-ant-amount" id="ce_ant_amount">€ 0,00</span></label></div>
+        <div class="fi"><label>Compenso da addebitare</label><input type="text" id="ce_addeb" inputmode="decimal" placeholder="€ 0,00" readonly><div class="comp-autocalc-note">Calcolo automatico: compenso lordo + rivalsa 4% calcolata solo sul lordo + anticipazioni spese</div></div>
       </div>
       <div class="comp-ant-inline" id="ce_ant_box">
         <div class="comp-ant-note" id="ce_ant_summary">Nessuna anticipazione inserita.</div>
@@ -3605,8 +3611,8 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
       </div>
       <div class="rg rg3">
         <div class="fi"><label>Compenso lordo</label><input type="text" id="ca_comp_lordo" inputmode="decimal" placeholder="€ 0,00"></div>
-        <div class="fi"><label>Rivalsa INPS</label><label class="comp-checkline"><input type="checkbox" id="ca_rivalsa"> Applica rivalsa 4%</label></div>
-        <div class="fi"><label>Compenso da addebitare</label><input type="text" id="ca_addebito" class="comp-money-input" inputmode="decimal" placeholder="€ 0,00" readonly><div class="comp-autocalc-note">Calcolo automatico: lordo + rivalsa 4%</div></div>
+        <div class="fi"><label>Rivalsa INPS</label><label class="comp-checkline"><input type="checkbox" id="ca_rivalsa"> Applica rivalsa 4% <span class="comp-rivalsa-amount" id="ca_rivalsa_amount">€ 0,00</span></label></div>
+        <div class="fi"><label>Compenso da addebitare</label><input type="text" id="ca_addebito" class="comp-money-input" inputmode="decimal" placeholder="€ 0,00" readonly><div class="comp-autocalc-note">Calcolo automatico: compenso lordo + rivalsa 4% calcolata solo sul lordo</div></div>
       </div>
     </div>
     <div class="mf comp-anag-footer"><button class="btn" id="btnCompAnagSaveRubrica" type="button" style="margin-right:auto">Salva</button><button class="btn ghost" id="btnCompAnagCancel" type="button">Annulla</button><button class="btn pri" id="btnCompAnagSave" type="button">OK</button></div>
@@ -4841,7 +4847,7 @@ function esportaCompensiExcel(){
       compAnagName(r.mandatario,''),
       compDescSummary(r),
       formatMoney(r.lordo||''),
-      r.rivalsaInps?'SI':'NO',
+      r.rivalsaInps?('SI - '+compRivalsaImportoFmt(r)):'NO - € 0,00',
       ant.enabled?compAntSummary(ant):'',
       compCalcAddebito(r),
       riscSummary(r)
@@ -5260,14 +5266,27 @@ function compAntTotal(ant){
   if(!ant.enabled) return 0;
   return (ant.items||[]).reduce((a,x)=>a+moneyZero(x.importo),0);
 }
+function compAntImportoFmt(ant){
+  return formatMoney(compAntTotal(ant));
+}
+function compRivalsaImporto(row){
+  const n=moneyNumber(row&&row.lordo);
+  if(n===null || !(row&&row.rivalsaInps)) return 0;
+  return n*0.04;
+}
+function compRivalsaImportoFmt(row){
+  return formatMoney(compRivalsaImporto(row));
+}
 function compCalcAddebito(row){
   const n=moneyNumber(row&&row.lordo);
   const ant=compAntTotal(row&&row.anticipazioni);
+  // La rivalsa INPS si calcola esclusivamente sul compenso lordo.
+  // Le anticipazioni spese si sommano dopo e non sono soggette a rivalsa.
   if(n===null){
     const manual=moneyNumber(row&&row.addebitare);
     return formatMoney((manual||0)+ant);
   }
-  const rivalsa=(row&&row.rivalsaInps)?n*0.04:0;
+  const rivalsa=compRivalsaImporto(row);
   return formatMoney(n+rivalsa+ant);
 }
 function compSyncAddebito(row){
@@ -5307,7 +5326,10 @@ function syncAnagPfLabel(){
 function syncEditorAddebito(){
   const lordo=$('ce_lordo'), riv=$('ce_rivalsa'), ad=$('ce_addeb');
   if(!lordo||!riv||!ad) return;
-  ad.value=compCalcAddebito({lordo:lordo.value,rivalsaInps:riv.checked,anticipazioni:__compEditDraftAnticipazioni,addebitare:ad.value});
+  const row={lordo:lordo.value,rivalsaInps:riv.checked,anticipazioni:__compEditDraftAnticipazioni,addebitare:ad.value};
+  ad.value=compCalcAddebito(row);
+  const amt=$('ce_rivalsa_amount');
+  if(amt) amt.textContent=compRivalsaImportoFmt(row);
 }
 function compBlankRow(){
   const y=(S&&S.anno)||new Date().getFullYear();
@@ -5613,7 +5635,7 @@ function renderCompensiDashboard(){
   if($('compDashHero')) $('compDashHero').innerHTML=`
     <div class="comp-kpi"><div class="lbl">Incarichi totali</div><div class="num">${total}</div><div class="sub">Righe presenti nel registro compensi</div></div>
     <div class="comp-kpi"><div class="lbl">Compenso lordo</div><div class="num">${compEsc(formatMoney(lordo))}</div><div class="sub">Somma dei compensi lordi</div></div>
-    <div class="comp-kpi"><div class="lbl">Da addebitare</div><div class="num">${compEsc(formatMoney(addeb))}</div><div class="sub">Include rivalsa inps 4% e anticipazioni spese</div></div>
+    <div class="comp-kpi"><div class="lbl">Da addebitare</div><div class="num">${compEsc(formatMoney(addeb))}</div><div class="sub">Rivalsa calcolata solo sul lordo; anticipazioni escluse dalla rivalsa</div></div>
     <div class="comp-kpi"><div class="lbl">Da incassare</div><div class="num">${compEsc(formatMoney(daIncassare))}</div><div class="sub">Al netto degli incarichi marcati incassati</div></div>
     <div class="comp-kpi"><div class="lbl">Proforme</div><div class="num">${proforme}</div><div class="sub">Documenti univoci per numero e anno proforma</div></div>
     <div class="comp-kpi"><div class="lbl">Fatture</div><div class="num">${fatture}</div><div class="sub">Documenti univoci per numero e anno fattura</div></div>
@@ -5657,14 +5679,14 @@ function renderCompensiTable(){
       <td><button type="button" class="comp-link business-name comp-static-field comp-inline-open" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="mandatario" title="Modifica incarico e carica mandatario da Gestione clienti"${lockedAttr}>${compEsc(compAnagName(r.mandatario,'Carica mandatario da Gestione clienti'))}</button></td>
       <td><button type="button" class="comp-desc-static comp-inline-open comp-inline-desc" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="cliente" title="Modifica incarico: descrizione gestita da Gestione clienti"${lockedAttr}>${compEsc(compDescSummary(r))}<span class="comp-desc-muted">Gestito da Gestione clienti</span></button></td>
       <td><input class="comp-money-input" data-comp-field="lordo" data-id="${compEsc(r.id)}" value="${compEsc(formatMoney(r.lordo||''))}" inputmode="decimal" placeholder="€ 0,00"${lockedAttr}></td>
-      <td class="comp-center"><input type="checkbox" class="comp-big-check" data-comp-field="rivalsaInps" data-id="${compEsc(r.id)}" ${r.rivalsaInps?'checked':''}${lockedAttr}></td>
-      <td class="comp-center"><label class="comp-ant-cell"><input type="checkbox" class="comp-big-check" data-comp-field="anticipazioni" data-id="${compEsc(r.id)}" ${ant.enabled?'checked':''}${lockedAttr}> <button type="button" class="comp-pill-btn" data-comp-ant="${compEsc(r.id)}"${lockedAttr}>${compEsc(compAntSummary(ant))}</button></label></td>
+      <td class="comp-center"><div class="comp-rivalsa-stack"><input type="checkbox" class="comp-big-check" data-comp-field="rivalsaInps" data-id="${compEsc(r.id)}" ${r.rivalsaInps?'checked':''}${lockedAttr}><span class="comp-rivalsa-amount">${compEsc(compRivalsaImportoFmt(r))}</span></div></td>
+      <td class="comp-center"><div class="comp-ant-stack"><input type="checkbox" class="comp-big-check" data-comp-field="anticipazioni" data-id="${compEsc(r.id)}" ${ant.enabled?'checked':''}${lockedAttr}><span class="comp-ant-amount">${compEsc(compAntImportoFmt(ant))}</span><button type="button" class="comp-pill-btn" data-comp-ant="${compEsc(r.id)}"${lockedAttr}>${compEsc(compAntSummary(ant))}</button></div></td>
       <td><input class="comp-money-input" value="${compEsc(compCalcAddebito(r))}" inputmode="decimal" placeholder="€ 0,00" readonly></td>
       <td><button type="button" class="comp-risc-btn ${compEsc(compRiscClass(risc))}" data-comp-risc="${compEsc(r.id)}"${lockedAttr}>${compEsc(riscSummary(r))}</button></td>
     </tr>`;
   }).join(''):`<tr class="erow"><td colspan="11">Nessun incarico presente. Premi “+ incarico” per inserirne uno.</td></tr>`;
   $('tw').innerHTML=`<table class="grid comp-grid"><thead><tr>
-    <th class="comp-actions-h">Azioni</th><th>Periodo di riferimento</th><th>Stato</th><th>Ragione sociale cliente</th><th>Ragione sociale mandatario</th><th>Descrizione compenso</th><th>Compenso lordo</th><th>Rivalsa inps</th><th>Anticipazioni spese</th><th>Compenso da addebitare</th><th>Stato riscossione</th>
+    <th class="comp-actions-h">Azioni</th><th>Periodo di riferimento</th><th>Stato</th><th>Ragione sociale cliente</th><th>Ragione sociale mandatario</th><th>Descrizione compenso</th><th>Compenso lordo</th><th>Rivalsa INPS</th><th>Anticipazioni spese</th><th>Compenso da addebitare</th><th>Stato riscossione</th>
   </tr></thead><tbody>${body}</tbody></table>`;
   installCompensiTableHandlers();
   renderCompensiDashboard();
@@ -5857,6 +5879,7 @@ function refreshEditorAnticipazioni(){
   __compEditDraftAnticipazioni=ant;
   if($('ce_ant_enabled')) $('ce_ant_enabled').checked=!!ant.enabled;
   if($('ce_ant_summary')) $('ce_ant_summary').textContent=ant.enabled?compAntSummary(ant):'Nessuna anticipazione inserita.';
+  if($('ce_ant_amount')) $('ce_ant_amount').textContent=compAntImportoFmt(ant);
   if($('ce_ant_box')) $('ce_ant_box').style.display=($('ce_ant_enabled')&&$('ce_ant_enabled').checked)?'block':'none';
   syncEditorAddebito();
 }
@@ -5997,7 +6020,10 @@ function anagPeriodicSummary(d,p){
 function syncAnagAddebito(){
   const lordo=$('ca_comp_lordo'), riv=$('ca_rivalsa'), ad=$('ca_addebito');
   if(!ad) return;
-  ad.value=compCalcAddebito({lordo:lordo?lordo.value:'',rivalsaInps:!!(riv&&riv.checked),anticipazioni:{enabled:false,items:[]},addebitare:''});
+  const row={lordo:lordo?lordo.value:'',rivalsaInps:!!(riv&&riv.checked),anticipazioni:{enabled:false,items:[]},addebitare:''};
+  ad.value=compCalcAddebito(row);
+  const amt=$('ca_rivalsa_amount');
+  if(amt) amt.textContent=compRivalsaImportoFmt(row);
 }
 
 function anagFromForm(){
@@ -6366,7 +6392,7 @@ function renderRubricaList(){
   if(__rubricaSelectContext && (__rubricaSelectContext.side==='cliente'||__rubricaSelectContext.side==='mandatario')) rows=rows.filter(a=>rubricaMatchesSide(a,__rubricaSelectContext.side));
   if(q) rows=rows.filter(a=>[a.rs,a.cf,a.piva,a.email,a.pec,a.tel,a.citta,a.indirizzo,a.codiceDestinatario,a.compensoLordo,a.compensoAddebitare,a.descrizioneCompenso,Object.keys(a.descrizioniCompenso||{}).join(' '),Object.values(a.descrizioniCompenso||{}).join(' '),Object.keys(a.descrizioniCompensoPeriodiche||{}).join(' '),a.isCliente?'cliente':'',a.isMandatario?'mandatario':''].join(' ').toUpperCase().includes(q));
   box.innerHTML=rows.length?rows.map(a=>`<div class="rubrica-card" data-rub-id="${compEsc(a.id)}">
-    <div class="rubrica-card-head"><div><strong class="rubrica-name" data-no-case>${compEsc(upperName(a.rs)||'SENZA NOME')}</strong><div class="rubrica-role-badges">${rubricaRoleBadges(a)}</div><div class="meta">${compEsc(a.personaFisica?'persona fisica':'società/ente')} · cf ${compEsc(a.cf||'—')} · p.iva ${compEsc(a.piva||'—')} · codice destinatario ${compEsc(a.codiceDestinatario||'—')}</div><div class="meta">${compEsc([a.email,a.pec?('PEC '+a.pec):'',a.tel,a.citta].filter(Boolean).join(' · ')||'Nessun contatto inserito')}</div><div class="meta"><span class="comp-meta-strong">Compenso lordo:</span> ${compEsc(formatMoney(a.compensoLordo||a.imp||'')||'—')} · <span class="comp-meta-strong">Rivalsa:</span> ${a.rivalsaInps?'sì':'no'} · <span class="comp-meta-strong">Da addebitare:</span> ${compEsc(formatMoney(a.compensoAddebitare||'')||'—')} · <span class="comp-meta-strong">Descrizione:</span> ${compEsc(a.descrizioneCompenso||'—')} ${anagPeriodicSummary(a.descrizioniCompenso||{},a.descrizioniCompensoPeriodiche||{})?'<span class="comp-desc-periodic-badge">periodico</span>':''}</div></div></div>
+    <div class="rubrica-card-head"><div><strong class="rubrica-name" data-no-case>${compEsc(upperName(a.rs)||'SENZA NOME')}</strong><div class="rubrica-role-badges">${rubricaRoleBadges(a)}</div><div class="meta">${compEsc(a.personaFisica?'persona fisica':'società/ente')} · cf ${compEsc(a.cf||'—')} · p.iva ${compEsc(a.piva||'—')} · codice destinatario ${compEsc(a.codiceDestinatario||'—')}</div><div class="meta">${compEsc([a.email,a.pec?('PEC '+a.pec):'',a.tel,a.citta].filter(Boolean).join(' · ')||'Nessun contatto inserito')}</div><div class="meta"><span class="comp-meta-strong">Compenso lordo:</span> ${compEsc(formatMoney(a.compensoLordo||a.imp||'')||'—')} · <span class="comp-meta-strong">Rivalsa:</span> ${a.rivalsaInps?('sì · '+compEsc(compRivalsaImportoFmt({lordo:a.compensoLordo||a.imp,rivalsaInps:a.rivalsaInps}))):'no'} · <span class="comp-meta-strong">Da addebitare:</span> ${compEsc(formatMoney(a.compensoAddebitare||'')||'—')} · <span class="comp-meta-strong">Descrizione:</span> ${compEsc(a.descrizioneCompenso||'—')} ${anagPeriodicSummary(a.descrizioniCompenso||{},a.descrizioniCompensoPeriodiche||{})?'<span class="comp-desc-periodic-badge">periodico</span>':''}</div></div></div>
     <div class="rubrica-actions"><button type="button" class="btn pri" data-rub-select="${compEsc(a.id)}">Seleziona</button><button type="button" class="btn" data-rub-edit="${compEsc(a.id)}">Modifica</button><button type="button" class="btn danger" data-rub-del="${compEsc(a.id)}">Elimina</button></div>
   </div>`).join(''):'<div class="ok-msg">Gestione clienti vuota. Premi “+ aggiungi ditta” per inserire cliente o mandatario.</div>';
   box.querySelectorAll('[data-rub-select]').forEach(b=>b.addEventListener('click',()=>selectRubricaForContext(b.dataset.rubSelect)));
@@ -6830,7 +6856,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('btnSav').addEventListener('click',salvaC);
 
   $('btnCompEditSave').addEventListener('click',saveCompensoEditor);
-  $('ce_ant_enabled').addEventListener('change',()=>{$('ce_ant_box').style.display=$('ce_ant_enabled').checked?'block':'none'; if($('ce_ant_enabled').checked) openCompAnt('__editor__'); else {__compEditDraftAnticipazioni={enabled:false,items:[]}; syncEditorAddebito();}});
+  $('ce_ant_enabled').addEventListener('change',()=>{$('ce_ant_box').style.display=$('ce_ant_enabled').checked?'block':'none'; if($('ce_ant_enabled').checked) openCompAnt('__editor__'); else {__compEditDraftAnticipazioni={enabled:false,items:[]}; refreshEditorAnticipazioni(); syncEditorAddebito();}});
   $('ce_rivalsa').addEventListener('change',syncEditorAddebito);
   $('ce_lordo').addEventListener('input',syncEditorAddebito);
   $('ce_desc_btn').addEventListener('click',()=>toast('La descrizione compenso si gestisce da Gestione clienti')); 
@@ -7043,6 +7069,9 @@ body[data-workspace="compensi"] .comp-grid td:nth-child(6) .comp-desc-muted{disp
 body[data-workspace="compensi"] .comp-risc-btn{font-size:10px!important;line-height:1.15!important;max-height:52px!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;white-space:normal!important;}
 body[data-workspace="compensi"] .comp-money-input,body[data-workspace="compensi"] .comp-native-select,body[data-workspace="compensi"] .comp-pill-btn{font-size:11px!important;}
 body[data-workspace="compensi"] .comp-ant-cell{height:52px!important;max-height:52px!important;}
+body[data-workspace="compensi"] .comp-ant-stack{height:52px!important;max-height:52px!important;gap:2px!important;}
+body[data-workspace="compensi"] .comp-ant-stack .comp-ant-amount{font-size:10px!important;padding:1px 7px!important;}
+body[data-workspace="compensi"] .comp-ant-stack .comp-pill-btn{font-size:9.5px!important;line-height:1!important;padding:4px 8px!important;max-height:20px!important;}
 body[data-workspace="compensi"] .comp-period-pair{height:52px!important;max-height:52px!important;}
 body[data-workspace="compensi"] #tw{position:relative!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;}
 body[data-workspace="compensi"] .comp-grid thead{position:sticky!important;top:0!important;z-index:25!important;}
@@ -7210,5 +7239,83 @@ body.edit-locked[data-workspace="compensi"] .comp-inline-open{pointer-events:non
   });
 })();
 </script>
+
+<!-- CLAUDIO_FIX_ANTICIPAZIONI_DISPLAY_START -->
+<style id="claudio-fix-anticipazioni-display">
+/* Fix visualizzazione colonna Anticipazioni spese: spunta + importo in alto, dettaglio sotto, senza tagli */
+body[data-workspace="compensi"] .comp-grid th:nth-child(9),
+body[data-workspace="compensi"] .comp-grid td:nth-child(9){
+  width:172px!important;
+  min-width:172px!important;
+}
+body[data-workspace="compensi"] .comp-grid tbody td:nth-child(9){
+  overflow:visible!important;
+}
+body[data-workspace="compensi"] .comp-grid tbody td:nth-child(9)>*{
+  max-height:none!important;
+  overflow:visible!important;
+}
+body[data-workspace="compensi"] .comp-ant-stack{
+  display:grid!important;
+  grid-template-columns:22px minmax(72px,auto)!important;
+  grid-template-rows:22px 22px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  justify-items:center!important;
+  gap:3px 6px!important;
+  height:50px!important;
+  max-height:50px!important;
+  min-width:134px!important;
+  overflow:visible!important;
+}
+body[data-workspace="compensi"] .comp-ant-stack .comp-big-check{
+  grid-column:1!important;
+  grid-row:1!important;
+  width:20px!important;
+  height:20px!important;
+  margin:0!important;
+}
+body[data-workspace="compensi"] .comp-ant-stack .comp-ant-amount{
+  grid-column:2!important;
+  grid-row:1!important;
+  margin:0!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:72px!important;
+  height:22px!important;
+  max-height:22px!important;
+  padding:2px 8px!important;
+  font-size:10px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+}
+body[data-workspace="compensi"] .comp-ant-stack .comp-pill-btn{
+  grid-column:1 / 3!important;
+  grid-row:2!important;
+  width:126px!important;
+  max-width:126px!important;
+  min-height:20px!important;
+  height:20px!important;
+  max-height:20px!important;
+  padding:3px 8px!important;
+  font-size:9px!important;
+  line-height:1!important;
+  display:block!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+@media (max-width:760px){
+  body[data-workspace="compensi"] .comp-grid th:nth-child(9),
+  body[data-workspace="compensi"] .comp-grid td:nth-child(9){
+    width:178px!important;
+    min-width:178px!important;
+  }
+  body[data-workspace="compensi"] .comp-ant-stack .comp-pill-btn{width:132px!important;max-width:132px!important;}
+}
+</style>
+<!-- CLAUDIO_FIX_ANTICIPAZIONI_DISPLAY_END -->
 
 </body></html>
