@@ -5698,6 +5698,22 @@ function renderCompensiDashboard(){
   }).join('') || '<div class="ok-msg">Nessuna riscossione presente</div>';
   applyProgramCase($('compDash'));
 }
+function fitCompensiTableText(root){
+  const scope=root||$('tw');
+  if(!scope) return;
+  const run=()=>{
+    scope.querySelectorAll('.comp-text-fit').forEach(el=>{
+      if(!el.clientWidth||!el.clientHeight) return;
+      let size=11;
+      el.style.setProperty('font-size',size+'px','important');
+      while(size>5 && (el.scrollHeight>el.clientHeight+1 || el.scrollWidth>el.clientWidth+1)){
+        size-=0.5;
+        el.style.setProperty('font-size',size+'px','important');
+      }
+    });
+  };
+  if(typeof requestAnimationFrame==='function') requestAnimationFrame(run); else run();
+}
 function renderCompensiTable(){
   ensureCompensiState();
   const autoCreated=ensureMonthlyRecurrences();
@@ -5707,6 +5723,8 @@ function renderCompensiTable(){
   const body=rows.length?rows.map(r=>{
     const ant=normalizeAnticipazioni(r.anticipazioni);
     const risc=(r.riscossione&&r.riscossione.stato)||'non incassato';
+    const descSummary=compDescSummary(r);
+    const descDisplay=descSummary==='+ Aggiungi prestazione professionale'?'Nessuna prestazione professionale inserita':descSummary;
     const lockedAttr=editMode?'':' disabled';
     const dragAttr=editMode?' draggable="true"':' disabled aria-disabled="true"';
     return `<tr data-comp-id="${compEsc(r.id)}" draggable="false">
@@ -5720,14 +5738,14 @@ function renderCompensiTable(){
         <select class="comp-native-select comp-year-select" data-comp-field="anno" data-id="${compEsc(r.id)}"${lockedAttr}>${compYears().map(y=>`<option value="${y}"${String(y)===String((r.periodo||{}).anno||S.anno)?' selected':''}>${y}</option>`).join('')}</select>
       </div></td>
       <td><select class="comp-native-select comp-status-select ${compStatusClass(r.stato)}" data-comp-field="stato" data-id="${compEsc(r.id)}"${lockedAttr}>${COMP_STATI.map(st=>`<option value="${compEsc(st)}"${st===r.stato?' selected':''}>${st}</option>`).join('')}</select></td>
-      <td><button type="button" class="comp-link business-name comp-static-field comp-inline-open" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="cliente" title="Modifica incarico e carica cliente da Gestione clienti"${lockedAttr}>${compEsc(compAnagName(r.cliente,'Carica cliente da Gestione clienti'))}</button></td>
-      <td><button type="button" class="comp-link business-name comp-static-field comp-inline-open" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="mandatario" title="Modifica incarico e carica mandatario da Gestione clienti"${lockedAttr}>${compEsc(compAnagName(r.mandatario,'Carica mandatario da Gestione clienti'))}</button></td>
-      <td><button type="button" class="comp-desc-static comp-inline-open comp-inline-desc" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="cliente" title="Modifica incarico: descrizione gestita da Gestione clienti"${lockedAttr}>${compEsc(compDescSummary(r))}<span class="comp-desc-muted">Gestito da Gestione clienti</span></button></td>
+      <td><button type="button" class="comp-link business-name comp-static-field comp-inline-open comp-text-fit" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="cliente" title="Modifica incarico e carica cliente da Gestione clienti"${lockedAttr}>${compEsc(compAnagName(r.cliente,'Carica cliente da Gestione clienti'))}</button></td>
+      <td><button type="button" class="comp-link business-name comp-static-field comp-inline-open comp-text-fit" data-no-case data-comp-edit="${compEsc(r.id)}" data-comp-focus="mandatario" title="Modifica incarico e carica mandatario da Gestione clienti"${lockedAttr}>${compEsc(compAnagName(r.mandatario,'Carica mandatario da Gestione clienti'))}</button></td>
+      <td><div class="comp-desc-display comp-text-fit" data-no-case title="${compEsc(descDisplay)}">${compEsc(descDisplay)}</div></td>
       <td><input class="comp-money-input" data-comp-field="lordo" data-id="${compEsc(r.id)}" value="${compEsc(formatMoney(r.lordo||''))}" inputmode="decimal" placeholder="€ 0,00"${lockedAttr}></td>
       <td class="comp-center"><div class="comp-rivalsa-stack"><input type="checkbox" class="comp-big-check" data-comp-field="rivalsaInps" data-id="${compEsc(r.id)}" ${r.rivalsaInps?'checked':''}${lockedAttr}><span class="comp-rivalsa-amount">${compEsc(compRivalsaImportoFmt(r))}</span></div></td>
       <td class="comp-center"><div class="comp-ant-stack"><input type="checkbox" class="comp-big-check" data-comp-field="anticipazioni" data-id="${compEsc(r.id)}" ${ant.enabled?'checked':''}${lockedAttr}><span class="comp-ant-amount">${compEsc(compAntImportoFmt(ant))}</span><button type="button" class="comp-pill-btn" data-comp-ant="${compEsc(r.id)}"${lockedAttr}>${compEsc(compAntSummary(ant))}</button></div></td>
       <td><input class="comp-money-input" value="${compEsc(compCalcAddebito(r))}" inputmode="decimal" placeholder="€ 0,00" readonly></td>
-      <td><button type="button" class="comp-risc-btn ${compEsc(compRiscClass(risc))}" data-comp-risc="${compEsc(r.id)}"${lockedAttr}>${compEsc(riscSummary(r))}</button></td>
+      <td><button type="button" class="comp-risc-btn comp-text-fit ${compEsc(compRiscClass(risc))}" data-comp-risc="${compEsc(r.id)}"${lockedAttr}>${compEsc(riscSummary(r))}</button></td>
     </tr>`;
   }).join(''):`<tr class="erow"><td colspan="11">Nessun incarico presente. Premi “+ incarico” per inserirne uno.</td></tr>`;
   $('tw').innerHTML=`<table class="grid comp-grid"><thead><tr>
@@ -5736,6 +5754,7 @@ function renderCompensiTable(){
   installCompensiTableHandlers();
   renderCompensiDashboard();
   applyProgramCase($('tw'));
+  fitCompensiTableText();
 }
 function renderTable(){
   let out;
@@ -7016,7 +7035,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   let rzTimer=null;
   window.addEventListener('resize',()=>{
     clearTimeout(rzTimer);
-    rzTimer=setTimeout(()=>{ if($('dash').classList.contains('on')) renderDashboard(); if($('compDash').classList.contains('on')) renderCompensiDashboard(); },200);
+    rzTimer=setTimeout(()=>{ if($('dash').classList.contains('on')) renderDashboard(); if($('compDash').classList.contains('on')) renderCompensiDashboard(); if(document.body.dataset.workspace==='compensi') fitCompensiTableText(); },200);
   });
 });
 
@@ -7460,5 +7479,92 @@ body[data-workspace="compensi"] .comp-grid th{white-space:normal!important;font-
 }
 </style>
 <!-- CLAUDIO_FIX_RICHIESTE_20260710_END -->
+
+<!-- CLAUDIO_CORREZIONI_PRESTAZIONE_E_REGISTRO_START -->
+<style id="claudio-correzioni-prestazione-registro">
+/* Il pulsante è realmente attivo nella scheda Nuovo/Modifica incarico. */
+#ce_desc_btn{
+  cursor:pointer!important;
+  pointer-events:auto!important;
+  opacity:1!important;
+  filter:none!important;
+  background:#F8FDFF!important;
+}
+#ce_desc_btn:hover{background:#EAF8FE!important;border-color:#00AEEF!important;box-shadow:0 0 0 3px rgba(0,174,239,.12)!important;}
+#ce_desc_btn .comp-desc-muted::after{content:none!important;display:none!important;}
+
+/* In tabella la prestazione è solo informativa e non può essere modificata. */
+.comp-desc-display{
+  width:100%!important;
+  height:50px!important;
+  min-height:50px!important;
+  max-height:50px!important;
+  padding:5px 7px!important;
+  border:1px solid #BDE6F5!important;
+  border-radius:12px!important;
+  background:#F8FDFF!important;
+  color:#043B5C!important;
+  font-weight:850!important;
+  text-align:left!important;
+  cursor:default!important;
+  pointer-events:none!important;
+  box-shadow:0 2px 6px rgba(0,73,115,.06)!important;
+}
+body[data-workspace="compensi"] .comp-text-fit{
+  height:50px!important;
+  min-height:50px!important;
+  max-height:50px!important;
+  overflow:hidden!important;
+  white-space:normal!important;
+  word-break:break-word!important;
+  line-height:1.06!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  -webkit-line-clamp:unset!important;
+  -webkit-box-orient:initial!important;
+  text-overflow:clip!important;
+}
+
+/* Registro lavori ripristinato com'era: tabella larga e barra orizzontale disponibile. */
+body[data-workspace="adempimenti"] #tw{
+  overflow-x:auto!important;
+  overflow-y:auto!important;
+  scrollbar-gutter:stable both-edges!important;
+  touch-action:pan-x pan-y!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+body[data-workspace="adempimenti"] #tw table.grid{
+  width:max-content!important;
+  min-width:100%!important;
+  max-width:none!important;
+  table-layout:fixed!important;
+}
+body[data-workspace="adempimenti"] #tw table.grid col.col-cn{width:210px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-op{width:112px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-fat{width:92px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-imp{width:112px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-iva{width:48px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-regime{width:168px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-paghe{width:96px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-note{width:150px!important;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-check{width:var(--check-col)!important;min-width:var(--check-col)!important;max-width:var(--check-col)!important;}
+body[data-workspace="adempimenti"] #tw table.grid td.cell{width:var(--check-col)!important;min-width:var(--check-col)!important;max-width:var(--check-col)!important;padding-left:0!important;padding-right:0!important;overflow:visible!important;}
+body[data-workspace="adempimenti"] #tw table.grid td.ic,
+body[data-workspace="adempimenti"] #tw table.grid td.cn{overflow:hidden!important;text-overflow:ellipsis!important;}
+body[data-workspace="adempimenti"] #tw table.grid .cat-h{white-space:nowrap!important;font-size:10px!important;line-height:normal!important;}
+@media (max-width:760px){
+  body[data-workspace="adempimenti"] #tw table.grid{min-width:max-content!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-cn{width:154px!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-op{width:82px!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-fat{width:76px!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-imp{width:88px!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-iva{width:88px!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-regime{width:132px!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-paghe{width:92px!important;}
+  body[data-workspace="adempimenti"] #tw table.grid col.col-note{width:116px!important;}
+}
+</style>
+<!-- CLAUDIO_CORREZIONI_PRESTAZIONE_E_REGISTRO_END -->
 
 </body></html>
