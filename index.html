@@ -3550,7 +3550,11 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
           <button type="button" class="btn" id="btnCeMandatarioRubrica">Carica</button>
         </div>
       </div>
-      <div class="fi"><label>Descrizione compenso</label><input type="hidden" id="ce_desc"><button type="button" class="comp-desc-btn" data-no-case id="ce_desc_btn" disabled>Descrizione da Gestione clienti<span class="comp-desc-muted">Si compila caricando la ditta dalla Gestione clienti.</span></button></div>
+      <div class="fi"><label>Prestazione professionale</label><input type="hidden" id="ce_desc"><button type="button" class="comp-desc-btn" data-no-case id="ce_desc_btn">+ Aggiungi prestazione professionale<span class="comp-desc-muted">Clicca per inserire il testo della prestazione.</span></button></div>
+      <div class="fi comp-recurrence-field">
+        <label>Ricorrenza mensile</label>
+        <label class="comp-checkline comp-recurrence-toggle"><input type="checkbox" id="ce_ricorrenza"> Ricorrenza mensile <span class="comp-recurrence-note">Dal giorno 1 del mese successivo crea automaticamente una riga uguale per il nuovo mese.</span></label>
+      </div>
       <div class="rg rg3">
         <div class="fi"><label>Compenso lordo</label><input type="text" id="ce_lordo" inputmode="decimal" placeholder="€ 0,00"></div>
         <div class="fi"><label>Anticipazioni spese</label><label class="comp-checkline"><input type="checkbox" id="ce_ant_enabled"> Attiva anticipazioni <span class="comp-ant-amount" id="ce_ant_amount">€ 0,00</span></label></div>
@@ -3570,7 +3574,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
     <div class="mh"><h2 id="compAnagTitle">Scheda ditta</h2><button class="xbtn" data-cl="ovCompAnag">×</button></div>
     <div class="mb">
       <div class="comp-ditta-section-title comp-anag-section-title">Dati anagrafici ditta</div>
-      <div class="comp-anag-section-note">Compila qui ragione sociale, codice fiscale, partita IVA, contatti e indirizzo. I dati compenso restano nella sezione successiva della stessa scheda.</div>
+      <div class="comp-anag-section-note">Compila qui esclusivamente ragione sociale, codice fiscale, partita IVA, contatti e indirizzo.</div>
       <div class="rg rg2">
         <div class="fi comp-anag-persona"><label>Tipologia soggetto</label><label class="comp-checkline"><input type="checkbox" id="ca_pf"> Persona fisica</label></div>
         <div class="fi comp-anag-roles"><label>Ruolo in Gestione clienti</label><div class="comp-role-grid"><label class="comp-checkline"><input type="checkbox" id="ca_role_cliente"> Cliente</label><label class="comp-checkline"><input type="checkbox" id="ca_role_mandatario"> Mandatario</label></div></div>
@@ -3600,20 +3604,6 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
         <div class="fi"><label>Indirizzo</label><input type="text" id="ca_indirizzo"></div>
       </div>
       <div class="fi"><label>Note anagrafiche</label><textarea id="ca_note"></textarea></div>
-      <div class="comp-ditta-section-title">Dati compenso predefiniti</div>
-      <div class="comp-ditta-desc-box">
-        <div class="comp-desc-toolbar comp-ditta-desc-toolbar">
-          <button type="button" class="btn pri comp-desc-add" id="btnCaDescAdd">+ Aggiungi voce</button>
-          <span class="comp-desc-help">Scheda descrizione compenso integrata nella ditta. Le voci salvate verranno proposte negli incarichi.</span>
-        </div>
-        <div class="comp-desc-list comp-ditta-desc-list" id="ca_desc_rows"></div>
-        <textarea id="ca_descrizione_compenso" style="display:none" aria-hidden="true"></textarea>
-      </div>
-      <div class="rg rg3">
-        <div class="fi"><label>Compenso lordo</label><input type="text" id="ca_comp_lordo" inputmode="decimal" placeholder="€ 0,00"></div>
-        <div class="fi"><label>Rivalsa INPS</label><label class="comp-checkline"><input type="checkbox" id="ca_rivalsa"> Applica rivalsa 4% <span class="comp-rivalsa-amount" id="ca_rivalsa_amount">€ 0,00</span></label></div>
-        <div class="fi"><label>Compenso da addebitare</label><input type="text" id="ca_addebito" class="comp-money-input" inputmode="decimal" placeholder="€ 0,00" readonly><div class="comp-autocalc-note">Calcolo automatico: compenso lordo + rivalsa 4% calcolata solo sul lordo</div></div>
-      </div>
     </div>
     <div class="mf comp-anag-footer"><button class="btn" id="btnCompAnagSaveRubrica" type="button" style="margin-right:auto">Salva</button><button class="btn ghost" id="btnCompAnagCancel" type="button">Annulla</button><button class="btn pri" id="btnCompAnagSave" type="button">OK</button></div>
   </div>
@@ -3622,15 +3612,15 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
 
 <div class="ov" id="ovCompDesc">
   <div class="modal wide comp-modal">
-    <div class="mh"><h2>Descrizione compenso</h2><button class="xbtn" data-cl="ovCompDesc">×</button></div>
+    <div class="mh"><h2>Prestazione professionale</h2><button class="xbtn" data-cl="ovCompDesc">×</button></div>
     <div class="mb">
       <div class="comp-desc-toolbar">
-        <button type="button" class="btn pri comp-desc-add" id="btnCompDescAdd">+ Aggiungi voce</button>
-        <span class="comp-desc-help">Inserisci manualmente le voci compenso da associare all'incarico.</span>
+        <button type="button" class="btn pri comp-desc-add" id="btnCompDescAdd">+ Aggiungi prestazione professionale</button>
+        <span class="comp-desc-help">Inserisci il testo della prestazione professionale da associare all'incarico.</span>
       </div>
       <div class="comp-desc-list" id="compDescRows"></div>
     </div>
-    <div class="mf"><button class="btn ghost" data-cl="ovCompDesc">Annulla</button><button class="btn pri" id="btnCompDescSave">Salva descrizione</button></div>
+    <div class="mf"><button class="btn ghost" data-cl="ovCompDesc">Annulla</button><button class="btn pri" id="btnCompDescSave">Salva prestazione</button></div>
   </div>
 </div>
 
@@ -3649,7 +3639,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
   <div class="modal wide comp-modal">
     <div class="mh"><h2>Gestione clienti</h2><button class="xbtn" data-cl="ovRubrica">×</button></div>
     <div class="mb">
-      <div class="fi"><label>Cerca in Gestione clienti</label><input type="text" id="rubSearch" placeholder="Cerca ditta, codice fiscale, partita iva, email, descrizione compenso..."></div>
+      <div class="fi"><label>Cerca in Gestione clienti</label><input type="text" id="rubSearch" placeholder="Cerca ditta, codice fiscale, partita iva, email..."></div>
       <div class="rubrica-select-hint" id="rubSelectHint">Premi “Seleziona” per riportare l'anagrafica nel rigo di Compensi e incarichi.</div>
       <div class="rubrica-list" id="rubList"></div>
     </div>
@@ -4153,6 +4143,7 @@ function ripristinaBackupDaFile(e){
       migrateState();
       if(typeof ensureCompensiState==='function') ensureCompensiState();
       if(typeof ensureRubricaState==='function') ensureRubricaState();
+      if(typeof ensureMonthlyRecurrences==='function') ensureMonthlyRecurrences();
       save(true);
       refreshAnno();
       renderTable();
@@ -5251,7 +5242,7 @@ function compDescSummary(r){
     return txt;
   }
   const libera=String((r&&r.descrizione)||'').trim();
-  return libera || '+ Aggiungi descrizione';
+  return libera || '+ Aggiungi prestazione professionale';
 }
 function compDescSearchText(r){
   const d=compEnsureDesc(r||{});
@@ -5335,10 +5326,59 @@ function compBlankRow(){
   const y=(S&&S.anno)||new Date().getFullYear();
   return {
     id:uid(),createdAt:new Date().toISOString(),periodo:{mese:String(new Date().getMonth()+1),anno:y},stato:'non evasa',
-    cliente:{rs:'',personaFisica:false,codiceDestinatario:''},mandatario:{rs:'',personaFisica:false,codiceDestinatario:''},descrizione:'',descrizioni:{},lordo:'',rivalsaInps:false,
+    cliente:{rs:'',personaFisica:false,codiceDestinatario:''},mandatario:{rs:'',personaFisica:false,codiceDestinatario:''},descrizione:'',descrizioni:{},lordo:'',rivalsaInps:false,ricorrenzaMensile:false,ricorrenzaId:'',
     anticipazioni:{enabled:false,items:[]},addebitare:'',
     riscossione:{stato:'non incassato',proformaEmessa:false,proformaNumero:'',proformaData:'',proformaImporto:'',proformaNote:'',fatturaEmessa:false,fatturaNumero:'',fatturaData:'',fatturaImporto:'',fatturaNote:'',ncEmessa:false,ncNumero:'',ncData:'',ncImporto:'',ncNote:'',rate:[],recupero:{fase:'sollecito',data:'',note:''}}
   };
+}
+function compPeriodSerial(r){
+  const p=(r&&r.periodo)||{};
+  const y=Number(p.anno), m=Number(p.mese);
+  if(!Number.isFinite(y)||m<1||m>12) return null;
+  return y*12+(m-1);
+}
+function compPeriodFromSerial(serial){
+  return {mese:String((serial%12+12)%12+1),anno:Math.floor(serial/12)};
+}
+function ensureMonthlyRecurrences(referenceDate){
+  if(!S||!Array.isArray(S.compensi)) return 0;
+  const now=referenceDate instanceof Date?referenceDate:new Date();
+  const currentSerial=now.getFullYear()*12+now.getMonth();
+  const groups=new Map();
+  S.compensi.forEach(r=>{
+    if(r.ricorrenzaMensile && !r.ricorrenzaId) r.ricorrenzaId=r.id||uid();
+    if(!r.ricorrenzaId) return;
+    if(!groups.has(r.ricorrenzaId)) groups.set(r.ricorrenzaId,[]);
+    groups.get(r.ricorrenzaId).push(r);
+  });
+  let created=0;
+  groups.forEach((rows,groupId)=>{
+    rows.sort((a,b)=>(compPeriodSerial(a)??Infinity)-(compPeriodSerial(b)??Infinity));
+    const eligible=rows.filter(r=>{const s=compPeriodSerial(r);return s!==null&&s<=currentSerial;});
+    if(!eligible.length) return;
+    let source=eligible[eligible.length-1];
+    let sourceSerial=compPeriodSerial(source);
+    while(source && source.ricorrenzaMensile && sourceSerial!==null && sourceSerial<currentSerial){
+      const nextSerial=sourceSerial+1;
+      const existing=rows.find(r=>compPeriodSerial(r)===nextSerial);
+      if(existing){ source=existing; sourceSerial=nextSerial; continue; }
+      const clone=JSON.parse(JSON.stringify(source));
+      clone.id=uid();
+      clone.createdAt=new Date(Math.floor(nextSerial/12),(nextSerial%12+12)%12,1,8,0,0).toISOString();
+      clone.periodo=compPeriodFromSerial(nextSerial);
+      clone.stato='non evasa';
+      clone.ricorrenzaMensile=true;
+      clone.ricorrenzaId=groupId;
+      clone.ricorrenzaGenerataDa=source.id||'';
+      clone.riscossione=compBlankRow().riscossione;
+      S.compensi.unshift(clone);
+      rows.push(clone);
+      source=clone;
+      sourceSerial=nextSerial;
+      created++;
+    }
+  });
+  return created;
 }
 function compFromCliente(cl){
   const r=compBlankRow();
@@ -5396,7 +5436,7 @@ function ensureRubricaState(){
     if(x.descrizioneCompenso==null) x.descrizioneCompenso='';
     if(!x.descrizioniCompenso || typeof x.descrizioniCompenso!=='object' || Array.isArray(x.descrizioniCompenso)){
       const legacy=String(x.descrizioneCompenso||'').trim();
-      x.descrizioniCompenso=legacy&&legacy!=='+ Aggiungi descrizione'?{[legacy.toLocaleUpperCase('it-IT')]:''}:{};
+      x.descrizioniCompenso=legacy&&legacy!=='+ Aggiungi descrizione'&&legacy!=='+ Aggiungi prestazione professionale'?{[legacy.toLocaleUpperCase('it-IT')]:''}:{};
     }
     if(!x.descrizioniCompensoPeriodiche || typeof x.descrizioniCompensoPeriodiche!=='object' || Array.isArray(x.descrizioniCompensoPeriodiche)) x.descrizioniCompensoPeriodiche={};
     const _per={};
@@ -5424,6 +5464,9 @@ function ensureCompensiState(){
     compEnsureDesc(r);
     r.descrizione=Object.keys(r.descrizioni||{}).length?compDescSummary(r):(r.descrizione||'');
     r.anticipazioni=normalizeAnticipazioni(r.anticipazioni);
+    if(typeof r.ricorrenzaMensile!=='boolean') r.ricorrenzaMensile=false;
+    if(r.ricorrenzaId==null) r.ricorrenzaId='';
+    if(r.ricorrenzaMensile&&!r.ricorrenzaId) r.ricorrenzaId=r.id;
     r.addebitare=compCalcAddebito(r);
     if(!r.riscossione) r.riscossione={stato:'non incassato',proformaEmessa:false,proformaNumero:'',proformaData:'',proformaImporto:'',proformaNote:'',fatturaEmessa:false,fatturaNumero:'',fatturaData:'',fatturaImporto:'',fatturaNote:'',ncEmessa:false,ncNumero:'',ncData:'',ncImporto:'',ncNote:'',rate:[],recupero:{fase:'sollecito',data:'',note:''}};
     const cr=r.riscossione;
@@ -5657,6 +5700,8 @@ function renderCompensiDashboard(){
 }
 function renderCompensiTable(){
   ensureCompensiState();
+  const autoCreated=ensureMonthlyRecurrences();
+  if(autoCreated) save(true);
   syncWorkspaceChrome('compensi');
   const rows=compFilteredRows();
   const body=rows.length?rows.map(r=>{
@@ -5863,7 +5908,6 @@ function loadEditorRubrica(side){
   else __compEditMandatarioData=copy;
   const input=$(side==='cliente'?'ce_cliente_rs':'ce_mandatario_rs');
   if(input) input.value=copy.rs||'';
-  if(side==='cliente') applyDittaCompensoToEditor(copy);
   toast((side==='cliente'?'Cliente':'Mandatario')+' caricato da Gestione clienti');
   syncEditorAddebito();
 }
@@ -5872,7 +5916,7 @@ function editorDescSummary(){
 }
 function refreshEditorDescButton(){
   const db=$('ce_desc_btn');
-  if(db) db.innerHTML=compEsc(editorDescSummary())+'<span class="comp-desc-muted">Gestito da Gestione clienti.</span>';
+  if(db) db.innerHTML=compEsc(editorDescSummary())+'<span class="comp-desc-muted">Clicca per inserire o modificare il testo della prestazione.</span>';
 }
 function refreshEditorAnticipazioni(){
   const ant=normalizeAnticipazioni(__compEditDraftAnticipazioni||{});
@@ -5899,6 +5943,7 @@ function openCompensoEditor(id){
   $('ce_cliente_rs').value=upperName((r.cliente&&r.cliente.rs)||'');
   $('ce_mandatario_rs').value=upperName((r.mandatario&&r.mandatario.rs)||'');
   $('ce_desc').value=r.descrizione||'';
+  $('ce_ricorrenza').checked=!!r.ricorrenzaMensile;
   refreshEditorRubricaSelects();
   refreshEditorDescButton();
   $('ce_lordo').value=formatMoney(r.lordo||'');
@@ -5917,6 +5962,8 @@ function saveCompensoEditor(){
   r.mandatario=applyAnagTargetRoles({...(__compEditMandatarioData||{}),rs:upperName($('ce_mandatario_rs').value)},'mandatario');
   r.descrizioni=JSON.parse(JSON.stringify(__compEditDraftDescrizioni||{}));
   r.descrizione=Object.keys(r.descrizioni||{}).length?compDescSummary(r):$('ce_desc').value.trim();
+  r.ricorrenzaMensile=!!$('ce_ricorrenza').checked;
+  if(r.ricorrenzaMensile&&!r.ricorrenzaId) r.ricorrenzaId=r.id;
   r.lordo=formatMoney($('ce_lordo').value);
   r.anticipazioni=normalizeAnticipazioni(__compEditDraftAnticipazioni||{});
   r.anticipazioni.enabled=($('ce_ant_enabled').checked || r.anticipazioni.items.length>0);
@@ -5926,7 +5973,9 @@ function saveCompensoEditor(){
     S.compensi.unshift(r);
     if($('sortSel') && $('sortSel').dataset.compensiMode) $('sortSel').value='manuale';
   }
-  save(); renderCompensiTable(); closeOv('ovCompEdit'); toast('Incarico salvato');
+  const generated=ensureMonthlyRecurrences();
+  save(); renderCompensiTable(); closeOv('ovCompEdit');
+  toast(generated?('Incarico salvato e '+generated+' ricorrenz'+(generated===1?'a creata':'e create')):'Incarico salvato');
 }
 function targetSide(){
   return (__compAnagTarget&&(__compAnagTarget.side==='cliente'||__compAnagTarget.side==='mandatario'))?__compAnagTarget.side:null;
@@ -5942,7 +5991,7 @@ function anagDescrizioniFromRecord(a){
   }
   if(!Object.keys(out).length){
     const legacy=String((a&&a.descrizioneCompenso)||'').trim();
-    if(legacy && legacy!=='+ Aggiungi descrizione') out[legacy.toLocaleUpperCase('it-IT')]='';
+    if(legacy && legacy!=='+ Aggiungi descrizione' && legacy!=='+ Aggiungi prestazione professionale') out[legacy.toLocaleUpperCase('it-IT')]='';
   }
   return out;
 }
@@ -6032,12 +6081,7 @@ function anagFromForm(){
   const side=targetSide();
   if(side==='cliente') isCliente=true;
   if(side==='mandatario') isMandatario=true;
-  const descrizioniCompenso=readAnagDescRows();
-  const descrizioniCompensoPeriodiche=readAnagPeriodicRows();
-  const descrizioneCompenso=anagDescSummaryFromRows(descrizioniCompenso);
-  if($('ca_descrizione_compenso')) $('ca_descrizione_compenso').value=descrizioneCompenso;
-  syncAnagAddebito();
-  return {rs:upperName($('ca_rs').value),personaFisica:$('ca_pf').checked,cf:$('ca_cf').value.trim().toUpperCase(),piva:$('ca_piva').value.trim(),codiceDestinatario:$('ca_cod_dest').value.trim().toUpperCase(),email:$('ca_email').value.trim(),pec:($('ca_pec')&&$('ca_pec').value||'').trim(),tel:$('ca_tel').value.trim(),citta:$('ca_citta').value.trim(),indirizzo:$('ca_indirizzo').value.trim(),note:$('ca_note').value.trim(),compensoLordo:formatMoney(($('ca_comp_lordo')&&$('ca_comp_lordo').value)||''),rivalsaInps:!!($('ca_rivalsa')&&$('ca_rivalsa').checked),compensoAddebitare:formatMoney(($('ca_addebito')&&$('ca_addebito').value)||''),descrizioneCompenso,descrizioniCompenso,descrizioniCompensoPeriodiche,isCliente,isMandatario};
+  return {rs:upperName($('ca_rs').value),personaFisica:$('ca_pf').checked,cf:$('ca_cf').value.trim().toUpperCase(),piva:$('ca_piva').value.trim(),codiceDestinatario:$('ca_cod_dest').value.trim().toUpperCase(),email:$('ca_email').value.trim(),pec:($('ca_pec')&&$('ca_pec').value||'').trim(),tel:$('ca_tel').value.trim(),citta:$('ca_citta').value.trim(),indirizzo:$('ca_indirizzo').value.trim(),note:$('ca_note').value.trim(),isCliente,isMandatario};
 }
 function fillAnagForm(a){
   a=normalizeRubricaRoles(a||{});
@@ -6234,8 +6278,7 @@ function saveAnagToRubrica(showToast=true){
   const rec={...existing,...a,id:i>=0?existing.id:uid(),updatedAt:new Date().toISOString()};
   normalizeRubricaRoles(rec);
   if(i>=0) S.rubrica[i]=rec; else S.rubrica.push(rec);
-  const periodicCreated=syncPeriodicCompensiForDitta(rec);
-  save(); captureAnagSnapshot(); refreshRubricaSelect(); refreshEditorRubricaSelects(); renderRubricaList(); renderCompensiDashboard(); if(showToast) toast(periodicCreated?('Ditta salvata: create '+periodicCreated+' righe periodiche mensili'):'Ditta salvata in Gestione clienti');
+  save(); captureAnagSnapshot(); refreshRubricaSelect(); refreshEditorRubricaSelects(); renderRubricaList(); renderCompensiDashboard(); if(showToast) toast('Ditta salvata in Gestione clienti');
   return true;
 }
 function syncPeriodicCompensiForDitta(a){
@@ -6375,7 +6418,6 @@ function selectRubricaForContext(id){
     const copy=applyAnagTargetRoles(JSON.parse(JSON.stringify(rec)),ctx.side);
     copy.rs=upperName(copy.rs||'');
     r[ctx.side]=copy;
-    if(ctx.side==='cliente') applyDittaCompensoToCompRow(r,copy);
     save(true);
     renderCompensiTable();
     closeOv('ovRubrica');
@@ -6390,9 +6432,9 @@ function renderRubricaList(){
   const q=($('rubSearch')&&$('rubSearch').value||'').trim().toUpperCase();
   let rows=(S.rubrica||[]).slice().sort((a,b)=>String(a.rs||'').localeCompare(String(b.rs||''),'it'));
   if(__rubricaSelectContext && (__rubricaSelectContext.side==='cliente'||__rubricaSelectContext.side==='mandatario')) rows=rows.filter(a=>rubricaMatchesSide(a,__rubricaSelectContext.side));
-  if(q) rows=rows.filter(a=>[a.rs,a.cf,a.piva,a.email,a.pec,a.tel,a.citta,a.indirizzo,a.codiceDestinatario,a.compensoLordo,a.compensoAddebitare,a.descrizioneCompenso,Object.keys(a.descrizioniCompenso||{}).join(' '),Object.values(a.descrizioniCompenso||{}).join(' '),Object.keys(a.descrizioniCompensoPeriodiche||{}).join(' '),a.isCliente?'cliente':'',a.isMandatario?'mandatario':''].join(' ').toUpperCase().includes(q));
+  if(q) rows=rows.filter(a=>[a.rs,a.cf,a.piva,a.email,a.pec,a.tel,a.citta,a.indirizzo,a.codiceDestinatario,a.isCliente?'cliente':'',a.isMandatario?'mandatario':''].join(' ').toUpperCase().includes(q));
   box.innerHTML=rows.length?rows.map(a=>`<div class="rubrica-card" data-rub-id="${compEsc(a.id)}">
-    <div class="rubrica-card-head"><div><strong class="rubrica-name" data-no-case>${compEsc(upperName(a.rs)||'SENZA NOME')}</strong><div class="rubrica-role-badges">${rubricaRoleBadges(a)}</div><div class="meta">${compEsc(a.personaFisica?'persona fisica':'società/ente')} · cf ${compEsc(a.cf||'—')} · p.iva ${compEsc(a.piva||'—')} · codice destinatario ${compEsc(a.codiceDestinatario||'—')}</div><div class="meta">${compEsc([a.email,a.pec?('PEC '+a.pec):'',a.tel,a.citta].filter(Boolean).join(' · ')||'Nessun contatto inserito')}</div><div class="meta"><span class="comp-meta-strong">Compenso lordo:</span> ${compEsc(formatMoney(a.compensoLordo||a.imp||'')||'—')} · <span class="comp-meta-strong">Rivalsa:</span> ${a.rivalsaInps?('sì · '+compEsc(compRivalsaImportoFmt({lordo:a.compensoLordo||a.imp,rivalsaInps:a.rivalsaInps}))):'no'} · <span class="comp-meta-strong">Da addebitare:</span> ${compEsc(formatMoney(a.compensoAddebitare||'')||'—')} · <span class="comp-meta-strong">Descrizione:</span> ${compEsc(a.descrizioneCompenso||'—')} ${anagPeriodicSummary(a.descrizioniCompenso||{},a.descrizioniCompensoPeriodiche||{})?'<span class="comp-desc-periodic-badge">periodico</span>':''}</div></div></div>
+    <div class="rubrica-card-head"><div><strong class="rubrica-name" data-no-case>${compEsc(upperName(a.rs)||'SENZA NOME')}</strong><div class="rubrica-role-badges">${rubricaRoleBadges(a)}</div><div class="meta">${compEsc(a.personaFisica?'persona fisica':'società/ente')} · cf ${compEsc(a.cf||'—')} · p.iva ${compEsc(a.piva||'—')} · codice destinatario ${compEsc(a.codiceDestinatario||'—')}</div><div class="meta">${compEsc([a.email,a.pec?('PEC '+a.pec):'',a.tel,a.citta].filter(Boolean).join(' · ')||'Nessun contatto inserito')}</div></div></div>
     <div class="rubrica-actions"><button type="button" class="btn pri" data-rub-select="${compEsc(a.id)}">Seleziona</button><button type="button" class="btn" data-rub-edit="${compEsc(a.id)}">Modifica</button><button type="button" class="btn danger" data-rub-del="${compEsc(a.id)}">Elimina</button></div>
   </div>`).join(''):'<div class="ok-msg">Gestione clienti vuota. Premi “+ aggiungi ditta” per inserire cliente o mandatario.</div>';
   box.querySelectorAll('[data-rub-select]').forEach(b=>b.addEventListener('click',()=>selectRubricaForContext(b.dataset.rubSelect)));
@@ -6421,8 +6463,8 @@ function addCompDescRow(voce='',nota='',checked=true){
   voce=String(voce||'').trim().toLocaleUpperCase('it-IT');
   const row=document.createElement('div');
   row.className='comp-desc-row'+(checked?'':' is-off');
-  row.innerHTML=`<label class="comp-desc-head" data-no-case><input type="checkbox" data-desc-check ${checked?'checked':''}> Voce compenso</label>
-    <input type="text" class="comp-desc-title" data-desc-voice value="${compEsc(voce)}" placeholder="Es. TENUTA CONTABILITÀ" ${checked?'':'disabled'}>
+  row.innerHTML=`<label class="comp-desc-head" data-no-case><input type="checkbox" data-desc-check ${checked?'checked':''}> Prestazione professionale</label>
+    <input type="text" class="comp-desc-title" data-desc-voice value="${compEsc(voce)}" placeholder="Es. CONSULENZA CONTABILE MENSILE" ${checked?'':'disabled'}>
     <input type="text" data-desc-note value="${compEsc(nota||'')}" placeholder="Dettaglio / periodo / note" ${checked?'':'disabled'}>`;
   box.appendChild(row);
   bindCompDescRow(row);
@@ -6449,11 +6491,13 @@ function openCompDesc(id){
   __compDescId=id;
   const box=$('compDescRows'); if(!box) return;
   box.innerHTML='';
-  const voices=descVoicesFor(d);
+  const voices=isEditor?Object.keys(d||{}):descVoicesFor(d);
   if(voices.length){
     voices.forEach(voce=>addCompDescRow(voce, Object.prototype.hasOwnProperty.call(d,voce)?d[voce]:'', Object.prototype.hasOwnProperty.call(d,voce)));
+  }else if(isEditor){
+    addCompDescRow('', '', true);
   }else{
-    box.innerHTML='<div class="ok-msg">Nessuna voce presente. Premi “+ Aggiungi voce” per inserirla manualmente.</div>';
+    box.innerHTML='<div class="ok-msg">Nessuna prestazione presente. Premi “+ Aggiungi prestazione professionale” per inserirla.</div>';
   }
   openOv('ovCompDesc');
 }
@@ -6478,13 +6522,13 @@ function saveCompDesc(){
     refreshEditorDescButton();
     save(true);
     closeOv('ovCompDesc');
-    toast(Object.keys(d).length?'Descrizione compenso salvata':'Descrizione compenso vuota');
+    toast(Object.keys(d).length?'Prestazione professionale salvata':'Prestazione professionale vuota');
     return;
   }
   const r=compById(__compDescId); if(!r) return;
   r.descrizioni=d;
   r.descrizione=Object.keys(d).length?compDescSummary(r):'';
-  save(); renderCompensiTable(); closeOv('ovCompDesc'); toast(Object.keys(d).length?'Descrizione compenso salvata':'Descrizione compenso vuota');
+  save(); renderCompensiTable(); closeOv('ovCompDesc'); toast(Object.keys(d).length?'Prestazione professionale salvata':'Prestazione professionale vuota');
 }
 function antRowHtml(tipo,item){
   const checked=!!item;
@@ -6771,14 +6815,34 @@ function saveCompRisc(){
   });
   save(); renderCompensiTable(); closeOv('ovCompRisc'); toast('Riscossione salvata e documenti attribuiti ai righi selezionati');
 }
+function compRateStatusClass(stato){
+  stato=String(stato||'da incassare').toLowerCase();
+  if(stato==='incassata'||stato==='incassato') return 'rate-is-incassata';
+  if(stato==='scaduta'||stato==='scaduto') return 'rate-is-scaduta';
+  return 'rate-is-da-incassare';
+}
+function syncGlobalRateStatusSelect(select){
+  if(!select) return;
+  select.classList.remove('rate-is-incassata','rate-is-da-incassare','rate-is-scaduta');
+  select.classList.add(compRateStatusClass(select.value));
+}
+function bindGlobalRateStatusSelect(root){
+  (root||document).querySelectorAll('select[data-global-rate="stato"]').forEach(select=>{
+    syncGlobalRateStatusSelect(select);
+    if(select.dataset.statusColorReady==='1') return;
+    select.dataset.statusColorReady='1';
+    select.addEventListener('change',()=>syncGlobalRateStatusSelect(select));
+  });
+}
 function compRateGlobalRowHtml(rate,idx){
   const rid=rate.rid||'';
   const accredito=rate.dataAccredito||rate.scadenza||'';
+  const stato=String(rate.stato||'da incassare').toLowerCase();
   return `<div class="comp-rate-global-row" data-global-rate-row="${idx}">
     <input type="date" data-global-rate="rid" title="RID del" value="${compEsc(rid)}">
     <input type="date" data-global-rate="scadenza" title="Data accredito" value="${compEsc(accredito)}">
     <input type="text" data-global-rate="importo" inputmode="decimal" placeholder="€ 0,00" value="${compEsc(formatMoney(rate.importo||''))}">
-    <select data-global-rate="stato"><option${(rate.stato||'da incassare')==='da incassare'?' selected':''}>da incassare</option><option${rate.stato==='incassata'?' selected':''}>incassata</option><option${rate.stato==='scaduta'?' selected':''}>scaduta</option></select>
+    <select data-global-rate="stato" class="${compRateStatusClass(stato)}"><option value="da incassare"${stato==='da incassare'?' selected':''}>Da incassare</option><option value="incassata"${stato==='incassata'||stato==='incassato'?' selected':''}>Incassato</option><option value="scaduta"${stato==='scaduta'||stato==='scaduto'?' selected':''}>Scaduto</option></select>
     <button type="button" class="ibtn comp-global-rate-del" title="Elimina rata">✕</button>
   </div>`;
 }
@@ -6800,6 +6864,7 @@ function renderIncassiRateali(){
       <div class="comp-rate-global-rows">${rates.map(compRateGlobalRowHtml).join('')}</div>
     </div>`;
   }).join('');
+  bindGlobalRateStatusSelect(out);
   out.querySelectorAll('.comp-global-rate-add').forEach(btn=>btn.addEventListener('click',()=>{
     const card=btn.closest('[data-rate-comp-id]'), rowsBox=card.querySelector('.comp-rate-global-rows');
     const div=document.createElement('div');
@@ -6808,6 +6873,7 @@ function renderIncassiRateali(){
     rowsBox.appendChild(row);
     row.querySelector('.comp-global-rate-del').addEventListener('click',()=>row.remove());
     applyProgramCase(row);
+    bindGlobalRateStatusSelect(row);
   }));
   out.querySelectorAll('.comp-global-rate-del').forEach(btn=>btn.addEventListener('click',()=>btn.closest('.comp-rate-global-row').remove()));
 }
@@ -6859,7 +6925,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('ce_ant_enabled').addEventListener('change',()=>{$('ce_ant_box').style.display=$('ce_ant_enabled').checked?'block':'none'; if($('ce_ant_enabled').checked) openCompAnt('__editor__'); else {__compEditDraftAnticipazioni={enabled:false,items:[]}; refreshEditorAnticipazioni(); syncEditorAddebito();}});
   $('ce_rivalsa').addEventListener('change',syncEditorAddebito);
   $('ce_lordo').addEventListener('input',syncEditorAddebito);
-  $('ce_desc_btn').addEventListener('click',()=>toast('La descrizione compenso si gestisce da Gestione clienti')); 
+  $('ce_desc_btn').addEventListener('click',()=>openCompDesc('__editor__'));
   ['ce_lordo'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('blur',()=>{el.value=formatMoney(el.value); syncEditorAddebito();}); });
   const caLordo=$('ca_comp_lordo');
   if(caLordo){
@@ -6962,6 +7028,8 @@ if(window.firebase && firebase.auth){
       try{
         await load();
         if(!S) S=JSON.parse(JSON.stringify(SEED_DATA));
+        if(typeof ensureCompensiState==='function') ensureCompensiState();
+        if(typeof ensureMonthlyRecurrences==='function' && ensureMonthlyRecurrences()) save(true);
         refreshAnno(); renderTable(); renderDashboard(); setTimeout(()=>applyProgramCase(document.body),0);
         document.getElementById('loginOverlay').style.display='none';
         if(typeof window.showWorkspacePortal==='function') window.showWorkspacePortal();
@@ -7317,5 +7385,80 @@ body[data-workspace="compensi"] .comp-ant-stack .comp-pill-btn{
 }
 </style>
 <!-- CLAUDIO_FIX_ANTICIPAZIONI_DISPLAY_END -->
+
+<!-- CLAUDIO_FIX_RICHIESTE_20260710_START -->
+<style id="claudio-fix-richieste-20260710">
+/* Prestazione professionale e ricorrenza: stesso linguaggio grafico del modulo esistente. */
+.comp-recurrence-field{margin-top:-2px!important;}
+.comp-recurrence-toggle{width:100%;min-height:48px!important;gap:10px!important;cursor:pointer;}
+.comp-recurrence-note{margin-left:auto;color:#64748B;font-size:10px;font-weight:750;line-height:1.25;text-align:right;text-transform:none;letter-spacing:0;}
+
+/* Colori immediati degli stati nella scheda Incassi rateali. */
+.comp-rate-global-row select[data-global-rate="stato"]{font-weight:900!important;transition:background .15s ease,border-color .15s ease,color .15s ease;}
+.comp-rate-global-row select[data-global-rate="stato"].rate-is-incassata{background:#EAFBF5!important;border-color:#00A676!important;color:#006B4D!important;}
+.comp-rate-global-row select[data-global-rate="stato"].rate-is-da-incassare{background:#FFF8D8!important;border-color:#E6B800!important;color:#7A5A00!important;}
+.comp-rate-global-row select[data-global-rate="stato"].rate-is-scaduta{background:#FFF0F1!important;border-color:#E5484D!important;color:#B42318!important;}
+
+/* Nessuno scorrimento orizzontale: le tabelle si adattano alla larghezza disponibile. */
+html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important;}
+.tablewrap,
+body[data-workspace="adempimenti"] #tw,
+body[data-workspace="compensi"] #tw{
+  max-width:calc(100% - 36px)!important;
+  box-sizing:border-box!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  scrollbar-gutter:auto!important;
+  touch-action:pan-y!important;
+}
+body[data-workspace="adempimenti"] #tw table.grid,
+body[data-workspace="compensi"] #tw table.grid.comp-grid{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  table-layout:fixed!important;
+}
+
+/* Registro lavori: mantiene identica la griglia, distribuendo le caselle nello spazio reale. */
+body[data-workspace="adempimenti"] #tw table.grid col.col-check,
+body[data-workspace="adempimenti"] #tw table.grid col.col-info{width:auto!important;min-width:0!important;max-width:none!important;}
+body[data-workspace="adempimenti"] #tw table.grid th,
+body[data-workspace="adempimenti"] #tw table.grid td{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis;}
+body[data-workspace="adempimenti"] #tw table.grid td.cell{width:auto!important;min-width:0!important;padding-left:0!important;padding-right:0!important;}
+body[data-workspace="adempimenti"] #tw table.grid .cat-h{white-space:normal!important;font-size:clamp(6px,.55vw,10px)!important;line-height:1.05!important;}
+
+/* Compensi e incarichi: stesse undici colonne, larghezze proporzionali e nessuna barra. */
+body[data-workspace="compensi"] .comp-grid th,
+body[data-workspace="compensi"] .comp-grid td{min-width:0!important;max-width:none!important;box-sizing:border-box!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(1),body[data-workspace="compensi"] .comp-grid td:nth-child(1){width:8%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(2),body[data-workspace="compensi"] .comp-grid td:nth-child(2){width:9%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(3),body[data-workspace="compensi"] .comp-grid td:nth-child(3){width:8%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(4),body[data-workspace="compensi"] .comp-grid td:nth-child(4){width:10%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(5),body[data-workspace="compensi"] .comp-grid td:nth-child(5){width:10%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(6),body[data-workspace="compensi"] .comp-grid td:nth-child(6){width:14%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(7),body[data-workspace="compensi"] .comp-grid td:nth-child(7){width:8%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(8),body[data-workspace="compensi"] .comp-grid td:nth-child(8){width:7%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(9),body[data-workspace="compensi"] .comp-grid td:nth-child(9){width:9%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(10),body[data-workspace="compensi"] .comp-grid td:nth-child(10){width:8%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-grid th:nth-child(11),body[data-workspace="compensi"] .comp-grid td:nth-child(11){width:9%!important;min-width:0!important;}
+body[data-workspace="compensi"] .comp-row-actions,
+body[data-workspace="compensi"] .comp-row-actions-inner,
+body[data-workspace="compensi"] .comp-ant-stack,
+body[data-workspace="compensi"] .comp-period-pair{width:100%!important;min-width:0!important;max-width:100%!important;}
+body[data-workspace="compensi"] .comp-grid input,
+body[data-workspace="compensi"] .comp-grid select,
+body[data-workspace="compensi"] .comp-grid button{min-width:0!important;max-width:100%!important;}
+body[data-workspace="compensi"] .comp-grid th{white-space:normal!important;font-size:clamp(7px,.55vw,10px)!important;line-height:1.05!important;padding-left:3px!important;padding-right:3px!important;}
+
+@media (max-width:760px){
+  .tablewrap,body[data-workspace="adempimenti"] #tw,body[data-workspace="compensi"] #tw{max-width:calc(100% - 16px)!important;}
+  .comp-recurrence-toggle{align-items:flex-start!important;}
+  .comp-recurrence-note{display:block;margin-left:0;text-align:left;}
+  body[data-workspace="adempimenti"] #tw table.grid .cat-h{font-size:6px!important;}
+  body[data-workspace="compensi"] .comp-grid th{font-size:7px!important;padding:3px 1px!important;}
+  body[data-workspace="compensi"] .comp-grid td{padding-left:2px!important;padding-right:2px!important;}
+}
+</style>
+<!-- CLAUDIO_FIX_RICHIESTE_20260710_END -->
 
 </body></html>
