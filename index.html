@@ -2278,7 +2278,7 @@ body.edit-locked #annoSel{
     box-shadow:0 8px 20px rgba(0,73,115,.08);
   }
   .switch-logout:hover{background:#EAF8FE;border-color:#67CFF1;}
-  .switch-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
+  .switch-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;}
 
   .switch-body{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px;align-items:start;}
   .switch-main{min-width:0;}
@@ -2831,18 +2831,11 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
           <div class="switch-meta"><span class="switch-pill">Scadenze</span><span class="switch-pill">Stato lavori</span><span class="switch-pill">Dashboard</span></div>
           <span class="switch-enter">Entra →</span>
         </button>
-        <button type="button" class="switch-card" id="openCompensi" data-workspace="compensi">
-          <div class="switch-icon">💼</div>
-          <h2>Cruscotto operativo compensi e gestione incarichi</h2>
-          <p>Apri il registro autonomo di compensi e incarichi: periodo, stato, anagrafiche, rivalsa INPS, anticipazioni, addebito e riscossione.</p>
-          <div class="switch-meta"><span class="switch-pill">Compensi</span><span class="switch-pill">Incarichi</span><span class="switch-pill">Clienti</span></div>
-          <span class="switch-enter">Entra →</span>
-        </button>
       </div>
     </div>
     <aside class="portal-actions" aria-label="Azioni generali programma">
       <div class="portal-actions-title">Azioni generali</div>
-      <div class="portal-actions-sub">Agiscono su Registro lavori e Compensi e incarichi.</div>
+      <div class="portal-actions-sub">Agiscono sul Registro lavori e sugli adempimenti.</div>
       <button type="button" class="portal-action-btn portal-edit-lock" id="portalBtnEditLock" aria-pressed="false">👁️ Modalità visualizzazione</button>
       <button type="button" class="portal-action-btn" id="portalBtnExportExcel">📥 Esporta Excel</button>
       <button type="button" class="portal-action-btn" id="portalBtnExportPdf">📄 Esporta PDF</button>
@@ -2870,7 +2863,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
     sw.setAttribute('aria-hidden', on?'false':'true');
   }
   window.showWorkspacePortal=function(){
-    window.__lastWorkspace=document.body.dataset.workspace||window.__lastWorkspace||'adempimenti';
+    window.__lastWorkspace='adempimenti';
     document.body.classList.add('app-gated');
     document.body.classList.remove('app-open');
     setPortalVisible(true);
@@ -2878,9 +2871,9 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
     if(login) login.style.display='none';
   };
   window.openWorkspace=function(mode){
+    mode='adempimenti';
     const cfg={
-      adempimenti:{title:'Registro lavori',sub:'Basanisi Claudio Tributarista · Cruscotto operativo adempimenti',search:'Cerca cliente…',sort:'rs',toast:'Cruscotto adempimenti aperto'},
-      compensi:{title:'Registro compensi e incarichi',sub:'Basanisi Claudio Tributarista · Cruscotto operativo compensi e gestione incarichi',search:'Cerca cliente, mandatario, descrizione o stato…',sort:'periodo',toast:'Cruscotto compensi e incarichi aperto'}
+      adempimenti:{title:'Registro lavori',sub:'Basanisi Claudio Tributarista · Cruscotto operativo adempimenti',search:'Cerca cliente…',sort:'rs',toast:'Cruscotto adempimenti aperto'}
     }[mode] || null;
     if(!cfg)return;
     window.__currentWorkspace=mode;
@@ -2894,22 +2887,14 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
     if(sub) sub.textContent=cfg.sub;
     if(search) search.placeholder=cfg.search;
     if(sort && cfg.sort) sort.value=cfg.sort;
-    if(chip) chip.textContent=mode==='adempimenti'?'Adempimenti':'Compensi e incarichi';
-    if(mode==='compensi'){
-      const dash=q('dash'), legend=q('legend');
-      if(dash) dash.classList.remove('on');
-      if(legend) legend.classList.remove('on');
-      if(typeof renderTable==='function') renderTable();
-    }else{
-      if(typeof renderTable==='function') renderTable();
-      if(typeof renderDashboard==='function') renderDashboard();
-    }
+    if(chip) chip.textContent='Adempimenti';
+    if(typeof renderTable==='function') renderTable();
+    if(typeof renderDashboard==='function') renderDashboard();
     if(typeof toast==='function') toast(cfg.toast);
   };
   window.hideWorkspacePortal=function(){setPortalVisible(false);};
   document.addEventListener('DOMContentLoaded',()=>{
     q('openAdempimenti')?.addEventListener('click',()=>window.openWorkspace('adempimenti'));
-    q('openCompensi')?.addEventListener('click',()=>window.openWorkspace('compensi'));
     q('btnSwitchWorkspace')?.addEventListener('click',()=>window.showWorkspacePortal());
     q('portalBtnEditLock')?.addEventListener('click',()=>{ if(typeof toggleEditMode==='function') toggleEditMode(); });
     q('portalBtnExportExcel')?.addEventListener('click',()=>{ if(typeof esporta==='function') esporta(); });
@@ -3465,7 +3450,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
     <div class="mb">
       <div class="rg rg2">
         <div class="fi"><label>Ragione sociale / Nome</label><input type="text" id="f_rs"></div>
-        <div class="fi"><label>Tipo soggetto</label><select id="f_tipo"><option>SPA</option><option>SRL</option><option>SSD</option><option>ASD</option><option>ETS</option><option>PROFESSIONISTA</option></select></div>
+        <div class="fi"><label>Tipo soggetto</label><select id="f_tipo"><option>SPA</option><option>SRL</option><option>SSD</option><option>ASD</option><option>ETS</option><option>ASSOCIAZIONE</option><option>ASSOCIAZIONE C.F.</option><option>PROFESSIONISTA</option></select></div>
       </div>
       <div class="rg rg2">
         <div class="fi"><label>Esercizio sociale</label>
@@ -3483,13 +3468,13 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
         </div>
       </div>
       <div class="rg rg3 onorario-edit">
-        <div class="fi"><label>Operatore</label><select id="f_op"><option value="">— scegli —</option><option>DEBORA</option><option>SIMONA</option><option>MIRKO</option><option>CLAUDIA</option><option>CLAUDIO</option></select></div>
+        <div class="fi"><label>Operatore</label><select id="f_op"><option value="">— scegli —</option><option value="ANTONIA GRANDE">Antonia Grande</option><option value="CLAUDIA COSTA">Claudia Costa</option><option value="CLAUDIO BASANISI">Claudio Basanisi</option><option value="DEBORA PIRILLI">Debora Pirilli</option><option value="LUCIO MONACO">Lucio Monaco</option><option value="MAURO BONIARDI">Mauro Boniardi</option><option value="MIRKO PEPE">Mirko Pepe</option><option value="PAOLO POLITO">Paolo Polito</option><option value="SIMONA FILIPPONE">Simona Filippone</option></select></div>
         <div class="fi"><label>Compenso</label><select id="f_fat"><option value="">— scegli —</option><option>FATT. FORFAIT M.LE</option><option>FATT. FORFAIT ANN.LE</option><option>FATT. M.LE</option><option>FATT. A.LE</option></select></div>
         <div class="fi"><label>Importo onorario</label><input type="text" id="f_imp" inputmode="decimal" placeholder="€ 00,00"></div>
       </div>
       <div class="rg rg3">
         <div class="fi"><label>IVA</label><select id="f_iva"><option value="">— scegli —</option><option>MENSILE</option><option>TRIMESTRALE</option></select></div>
-        <div class="fi"><label>Regime contabile</label><select id="f_reg"><option value="">— scegli —</option><option>ORDINARIA</option><option>SEMPLIFICATA</option><option>ORDINARIA 398/91</option><option>SEMPLIFICATA 398/91</option><option>ORDINARIA AG.VIAGGI</option></select></div>
+        <div class="fi"><label>Regime contabile</label><select id="f_reg"><option value="">— scegli —</option><option>ORDINARIA</option><option>SEMPLIFICATA</option><option>ORDINARIA 398/91</option><option>SEMPLIFICATA 398/91</option><option>ORDINARIA AG.VIAGGI</option><option>CODICE FISCALE</option><option>ART.86</option><option>ASS.NE P.IVA</option></select></div>
         <div class="fi"><label>Gestione paghe</label><select id="f_pag"><option value="">— scegli —</option><option>ESTERNO</option><option>ATHLETIS</option><option>ST. PURSCEDU</option><option>ST. BASANISI</option></select></div>
       </div>
       <div class="fi"><label>Note</label><textarea id="f_note"></textarea></div>
@@ -3786,10 +3771,21 @@ const INFO_COLS=[
 // ========= DEFAULTS =========
 const CAT_COLOR='#F7F2E2';
 
-const OPERATORI=['DEBORA','SIMONA','MIRKO','CLAUDIA','CLAUDIO'];
+const OPERATORI=['ANTONIA GRANDE','CLAUDIA COSTA','CLAUDIO BASANISI','DEBORA PIRILLI','LUCIO MONACO','MAURO BONIARDI','MIRKO PEPE','PAOLO POLITO','SIMONA FILIPPONE'];
+const OPERATORI_MIGRATE={
+  'ANTONIA':'ANTONIA GRANDE',
+  'CLAUDIA':'CLAUDIA COSTA',
+  'CLAUDIO':'CLAUDIO BASANISI',
+  'DEBORA':'DEBORA PIRILLI',
+  'LUCIO':'LUCIO MONACO',
+  'MAURO':'MAURO BONIARDI',
+  'MIRKO':'MIRKO PEPE',
+  'PAOLO':'PAOLO POLITO',
+  'SIMONA':'SIMONA FILIPPONE'
+};
 const COMPENSI=['FATT. FORFAIT M.LE','FATT. FORFAIT ANN.LE','FATT. M.LE','FATT. A.LE'];
 const IVA_OPTS=['MENSILE','TRIMESTRALE'];
-const REGIMI=['ORDINARIA','SEMPLIFICATA','ORDINARIA 398/91','SEMPLIFICATA 398/91','ORDINARIA AG.VIAGGI'];
+const REGIMI=['ORDINARIA','SEMPLIFICATA','ORDINARIA 398/91','SEMPLIFICATA 398/91','ORDINARIA AG.VIAGGI','CODICE FISCALE','ART.86','ASS.NE P.IVA'];
 const PAGHE_OPTS=['ESTERNO','ATHLETIS','ST. PURSCEDU','ST. BASANISI'];
 const REQUIRED_CATEGORIES=[
   {id:'mod770',  nome:'770',              per:'annuale', scad:{d:31,m:10,y:2026}, yearOffset:1},
@@ -3797,9 +3793,17 @@ const REQUIRED_CATEGORIES=[
   {id:'lipe2',   nome:'LI.PE. II TRIM.',  per:'annuale', scad:{d:30,m:9,y:2026},  yearOffset:0},
   {id:'lipe3',   nome:'LI.PE. III TRIM.', per:'annuale', scad:{d:30,m:11,y:2026}, yearOffset:0},
   {id:'lipe4',   nome:'LI.PE. IV TRIM.',  per:'annuale', scad:{d:28,m:2,y:2026},  yearOffset:1},
+  {id:'depbilrunst', nome:'DEP.TO BILANCIO RUNST', per:'annuale', scad:{d:30,m:6,y:2026}, yearOffset:1, defaultApplicable:false,
+    aliases:['DEPOSITO BILANCIO RUNST','DEP.TO BILANCIO RUNTS','DEPOSITO BILANCIO RUNTS']},
+  {id:'rendicassa', nome:'RENDICONTO ANNUALE PER CASSA', per:'annuale', scad:{d:30,m:4,y:2026}, yearOffset:1, defaultApplicable:false,
+    aliases:['RENDICONTO ANNUALE CASSA','RENDICONTO PER CASSA']},
 ];
 function normKey(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
-function normOp(v){v=String(v||'').trim().toUpperCase();return OPERATORI.includes(v)?v:'';}
+function normOp(v){
+  v=String(v||'').trim().toUpperCase();
+  if(OPERATORI_MIGRATE[v]) return OPERATORI_MIGRATE[v];
+  return OPERATORI.includes(v)?v:'';
+}
 function normFat(v){
   v=String(v||'').trim().toUpperCase();
   if(!v)return '';
@@ -3857,7 +3861,8 @@ function ensureRequiredCategories(){
   if(!Array.isArray(S.categorie))S.categorie=[];
   REQUIRED_CATEGORIES.forEach(req=>{
     const rk=normKey(req.nome);
-    let c=S.categorie.find(x=>x.id===req.id||normKey(x.nome)===rk);
+    const aliases=new Set((req.aliases||[]).map(normKey));
+    let c=S.categorie.find(x=>x.id===req.id||normKey(x.nome)===rk||aliases.has(normKey(x.nome)));
     if(c){
       c.nome=req.nome; c.per='annuale'; c.colore=CAT_COLOR;
       c.scad=c.scad||{};
@@ -3874,6 +3879,14 @@ function ensureRequiredCategories(){
       }
     }else{
       S.categorie.push({id:req.id,nome:req.nome,per:req.per,colore:CAT_COLOR,scad:{...req.scad}});
+      // I nuovi adempimenti specialistici compaiono come opzioni, senza
+      // diventare automaticamente dovuti per tutti i clienti già presenti.
+      if(req.defaultApplicable===false && Array.isArray(S.clienti)){
+        S.clienti.forEach(cl=>{
+          if(!cl.appl || typeof cl.appl!=='object') cl.appl={};
+          cl.appl[req.id]=false;
+        });
+      }
     }
   });
 }
@@ -3909,7 +3922,7 @@ function purgeDeprecatedCategories(){
 }
 function defCat(){
   return [
-    {id:'regiva',  nome:'REGISTRAZIONI IVA', per:'mensile',  colore:CAT_COLOR},
+    {id:'regiva',  nome:'LIQUIDAZIONI IVA',   per:'mensile',  colore:CAT_COLOR},
     {id:'prnota',  nome:'PRIMA NOTA',         per:'mensile',  colore:CAT_COLOR},
     {id:'cu',      nome:'CU',                 per:'annuale',  colore:CAT_COLOR, scad:{d:16,m:3,y:2026}},
     {id:'diciva',  nome:'DIC.IVA',            per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:4,y:2026}},
@@ -3920,6 +3933,8 @@ function defCat(){
     {id:'lipe2',   nome:'LI.PE. II TRIM.',    per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:9,y:2026}},
     {id:'lipe3',   nome:'LI.PE. III TRIM.',   per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:11,y:2026}},
     {id:'lipe4',   nome:'LI.PE. IV TRIM.',    per:'annuale',  colore:CAT_COLOR, scad:{d:28,m:2,y:2026}},
+    {id:'depbilrunst', nome:'DEP.TO BILANCIO RUNST', per:'annuale', colore:CAT_COLOR, scad:{d:30,m:6,y:2026}},
+    {id:'rendicassa', nome:'RENDICONTO ANNUALE PER CASSA', per:'annuale', colore:CAT_COLOR, scad:{d:30,m:4,y:2026}},
   ];
 }
 
@@ -4032,6 +4047,13 @@ function migrateState(allowSave=true){
   // l'esercizio infrannuale di Cassina Nuova SOLO se non è già stato configurato a mano.
   // Non tocca in nessun caso clienti, celle, stati, scadenze o note inserite manualmente.
   let changed=false;
+  if(Array.isArray(S.categorie)){
+    const liquidazioniIva=S.categorie.find(c=>c && (c.id==='regiva' || normKey(c.nome)==='REGISTRAZIONIIVA'));
+    if(liquidazioniIva && liquidazioniIva.nome!=='LIQUIDAZIONI IVA'){
+      liquidazioniIva.nome='LIQUIDAZIONI IVA';
+      changed=true;
+    }
+  }
   const beforeCats=JSON.stringify(S.categorie||[]);
   ensureRequiredCategories();
   if(purgeDeprecatedCategories()) changed=true;
@@ -4093,30 +4115,32 @@ function backupStamp(d){
 }
 function backupData(){
   try{
-    if(typeof ensureCompensiState==='function') ensureCompensiState();
-    if(typeof ensureRubricaState==='function') ensureRubricaState();
     save(true);
     const now=new Date();
+    const datiBackup=JSON.parse(JSON.stringify(S));
+    delete datiBackup.compensi;
+    delete datiBackup.rubrica;
+    delete datiBackup.compDescVoci;
     const payload={
-      tipo:'Backup Gestionale Studio Basanisi Claudio Tributarista',
-      versione:'v31-gestionale-globale',
+      tipo:'Backup Registro lavori Studio Basanisi Claudio Tributarista',
+      versione:'v32-registro-lavori',
       creatoIl:now.toISOString(),
       annoCorrente:S.anno,
-      areeIncluse:['Registro lavori / adempimenti','Compensi e incarichi','Gestione clienti'],
+      areeIncluse:['Registro lavori / adempimenti'],
       chiaveBrowser:STORE,
-      dati:S
+      dati:datiBackup
     };
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
-    a.download='Backup_Gestionale_Studio_Basanisi_'+backupStamp(now)+'.json';
+    a.download='Backup_Registro_Lavori_Basanisi_'+backupStamp(now)+'.json';
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
     $('savTxt').textContent='Backup eseguito alle '+p2(now.getHours())+':'+p2(now.getMinutes());
-    toast('Backup globale scaricato: contiene adempimenti, compensi e gestione clienti');
+    toast('Backup Registro lavori scaricato correttamente');
   }catch(e){
     alert('Backup non riuscito. Dettaglio: '+(e&&e.message?e.message:e));
   }
@@ -4138,19 +4162,16 @@ function ripristinaBackupDaFile(e){
       if(!dati||!Array.isArray(dati.clienti)||!Array.isArray(dati.categorie)){
         throw new Error('il file non contiene un backup valido del gestionale');
       }
-      if(!confirm('Vuoi ripristinare questo backup globale? Verranno sostituiti Registro lavori, Compensi e Gestione clienti.')) return;
+      if(!confirm('Vuoi ripristinare questo backup? Verranno sostituiti i dati del Registro lavori e degli adempimenti.')) return;
       S=dati;
       migrateState();
-      if(typeof ensureCompensiState==='function') ensureCompensiState();
-      if(typeof ensureRubricaState==='function') ensureRubricaState();
-      if(typeof ensureMonthlyRecurrences==='function') ensureMonthlyRecurrences();
       save(true);
       refreshAnno();
       renderTable();
       renderDashboard();
       const now=new Date();
       $('savTxt').textContent='Backup ripristinato alle '+p2(now.getHours())+':'+p2(now.getMinutes());
-      toast('Backup globale ripristinato correttamente');
+      toast('Backup Registro lavori ripristinato correttamente');
     }catch(err){
       alert('Impossibile ripristinare il backup. Dettaglio: '+(err&&err.message?err.message:err));
     }
@@ -4759,16 +4780,7 @@ function importRoster(wb){
 
 
 function exportChoice(kind){
-  const cur=(document.body&&document.body.dataset.workspace)||window.__lastWorkspace||'adempimenti';
-  const def=cur==='compensi'?'2':'1';
-  const msg='Cosa vuoi esportare in '+kind+'?\n\n1 - Registro lavori / adempimenti\n2 - Compensi e incarichi\n\nScrivi 1 oppure 2.';
-  const ans=prompt(msg,def);
-  if(ans===null) return null;
-  const v=String(ans).trim().toLowerCase();
-  if(v==='1'||v==='a'||v.includes('ademp')) return 'adempimenti';
-  if(v==='2'||v==='c'||v.includes('comp')) return 'compensi';
-  toast('Esportazione annullata: scelta non riconosciuta');
-  return null;
+  return 'adempimenti';
 }
 function fitExcelSheetOnePage(ws, cols){
   try{
@@ -4781,7 +4793,6 @@ function fitExcelSheetOnePage(ws, cols){
 function esporta(){
   const exportMode=exportChoice('Excel');
   if(!exportMode) return;
-  if(exportMode==='compensi') return esportaCompensiExcel();
   return esportaAdempimentiExcel();
 }
 function esportaAdempimentiExcel(){
@@ -4859,16 +4870,13 @@ function esportaCompensiExcel(){
 
 let __prePrintWorkspace=null;
 function preparePrintWorkspace(mode){
+  mode='adempimenti';
   __prePrintWorkspace=(document.body&&document.body.dataset.workspace)||window.__lastWorkspace||'adempimenti';
   if(window.openWorkspace) window.openWorkspace(mode);
-  document.body.classList.toggle('print-mode-compensi',mode==='compensi');
-  document.body.classList.toggle('print-mode-adempimenti',mode!=='compensi');
-  if(mode==='compensi'){
-    const d=$('compDash'); if(d) d.classList.remove('on');
-  }else{
-    const d=$('dash'); if(d) d.classList.remove('on');
-    const l=$('legend'); if(l) l.classList.remove('on');
-  }
+  document.body.classList.remove('print-mode-compensi');
+  document.body.classList.add('print-mode-adempimenti');
+  const d=$('dash'); if(d) d.classList.remove('on');
+  const l=$('legend'); if(l) l.classList.remove('on');
   if(typeof renderTable==='function') renderTable();
   buildPrintHead();
 }
@@ -5166,7 +5174,7 @@ function applyProgramCase(root){
     root=root||document.body;
     if(!root) return;
     try{
-      root.querySelectorAll&&root.querySelectorAll('option').forEach(o=>{ if(!o.hasAttribute('value')) o.setAttribute('value',o.value); if(o.closest('#ca_rubrica_select,#ce_cliente_rubrica,#ce_mandatario_rubrica')) return; o.textContent=sentenceCase(o.textContent); });
+      root.querySelectorAll&&root.querySelectorAll('option').forEach(o=>{ if(!o.hasAttribute('value')) o.setAttribute('value',o.value); if(o.closest('#ca_rubrica_select,#ce_cliente_rubrica,#ce_mandatario_rubrica,#f_op')) return; o.textContent=sentenceCase(o.textContent); });
       root.querySelectorAll&&root.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{ el.setAttribute('placeholder',sentenceCase(el.getAttribute('placeholder')||'')); });
     }catch(_e){}
     const skip=new Set(['SCRIPT','STYLE','TEXTAREA','INPUT','OPTION','CODE','PRE','NOSCRIPT']);
@@ -7047,8 +7055,6 @@ if(window.firebase && firebase.auth){
       try{
         await load();
         if(!S) S=JSON.parse(JSON.stringify(SEED_DATA));
-        if(typeof ensureCompensiState==='function') ensureCompensiState();
-        if(typeof ensureMonthlyRecurrences==='function' && ensureMonthlyRecurrences()) save(true);
         refreshAnno(); renderTable(); renderDashboard(); setTimeout(()=>applyProgramCase(document.body),0);
         document.getElementById('loginOverlay').style.display='none';
         if(typeof window.showWorkspacePortal==='function') window.showWorkspacePortal();
@@ -7566,5 +7572,34 @@ body[data-workspace="adempimenti"] #tw table.grid .cat-h{white-space:nowrap!impo
 }
 </style>
 <!-- CLAUDIO_CORREZIONI_PRESTAZIONE_E_REGISTRO_END -->
+
+<!-- CLAUDIO_FIX_RIDUCI_MESI_UNIFORMI_20260720_START -->
+<style id="claudio-fix-riduci-mesi-uniformi-20260720">
+/*
+ * In modalita Riduci le colonne informative devono restare nella struttura
+ * della tabella (per non far slittare gennaio-luglio), ma senza occupare spazio.
+ * In questo modo tutti i mesi usano sempre la larghezza di col-check.
+ */
+body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid col.col-info{
+  width:0!important;
+  min-width:0!important;
+  max-width:0!important;
+}
+body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid thead th.ic,
+body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid thead th.onorario-sub,
+body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid tbody td.ic{
+  display:table-cell!important;
+  visibility:hidden!important;
+  width:0!important;
+  min-width:0!important;
+  max-width:0!important;
+  padding:0!important;
+  border:0!important;
+  font-size:0!important;
+  line-height:0!important;
+  overflow:hidden!important;
+}
+</style>
+<!-- CLAUDIO_FIX_RIDUCI_MESI_UNIFORMI_20260720_END -->
 
 </body></html>
