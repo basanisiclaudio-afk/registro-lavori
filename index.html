@@ -4438,35 +4438,15 @@ function clientCatDeadline(cl,c){
   return d;
 }
 
-function shortAdempimentoName(nome){
-  const n=String(nome||'').toLocaleUpperCase('it-IT').replace(/\s+/g,' ').trim();
-  const exact={
-    'LIQUIDAZIONI IVA':'IVA','PRIMA NOTA':'PN','DIC.IVA':'D.IVA','SC / IRAP':'SC/IRAP',
-    'DEP.TO BILANCIO':'BIL','770':'770','LI.PE. I TRIM.':'L1','LI.PE. II TRIM.':'L2',
-    'LI.PE. III TRIM.':'L3','LI.PE. IV TRIM.':'L4','DEP.TO BILANCIO RUNST':'RUNST',
-    'RENDICONTO ANNUALE PER CASSA':'REND.'
-  };
-  return exact[n]||n.replace('DEPOSITO ','DEP. ').replace('RENDICONTO ','REND. ');
-}
-function clientComplianceSummary(cl){
-  const tipo=String(cl.tipo||'TIPO N.D.').toLocaleUpperCase('it-IT').trim();
-  const categorie=(S.categorie||[]).filter(c=>appl(cl,c.id,S.anno));
-  return {
-    tipo,
-    breve:categorie.length?categorie.map(c=>shortAdempimentoName(c.nome)).join(' · '):'NESSUN ADEMPIMENTO',
-    completo:categorie.length?categorie.map(c=>String(c.nome||'').toLocaleUpperCase('it-IT')).join(', '):'NESSUN ADEMPIMENTO'
-  };
-}
-
 function renderAdempimentiTable(){
   if(S && Array.isArray(S.categorie)) S.categorie.forEach(c=>{ if(c && c.nome) c.nome=String(c.nome).toLocaleUpperCase('it-IT'); });
   const cats=S.categorie;
   const list=filt();
   const sk=$('sortSel')?$('sortSel').value:'rs';
-  const totalCols=2+INFO_COLS.length+cats.reduce((s,c)=>s+periods(c).length,0);
+  const totalCols=1+INFO_COLS.length+cats.reduce((s,c)=>s+periods(c).length,0);
 
   // ---- HEADER ROW 1 ----
-  let h1=`<tr class="r1"><th class="cn" rowspan="2">Cliente</th><th class="client-summary-h" rowspan="2">Tipo e adempimenti</th>`;
+  let h1=`<tr class="r1"><th class="cn" rowspan="2">Cliente</th>`;
   INFO_COLS.forEach((ic,i)=>{
     if(ic.k==='fat'){
       h1+=`<th class="ic onorario-h" colspan="2">ONORARIO</th>`;
@@ -4508,9 +4488,7 @@ function renderAdempimentiTable(){
           body+=`<tr class="grp"><td class="grp-cell" colspan="${totalCols}">${esc(SORT_FIELDS[sk].label)}: ${esc(gv)}</td></tr>`;
         }
       }
-      const profilo=clientComplianceSummary(cl);
-      const profiloTitle=`TIPO: ${profilo.tipo}\nADEMPIMENTI ${S.anno}: ${profilo.completo}`;
-      body+=`<tr><td class="cn" data-e="${cl.id}">${esc(cl.rs)}</td><td class="client-summary" title="${esc(profiloTitle)}"><span class="client-summary-type">${esc(profilo.tipo)}</span><span class="client-summary-list">${esc(profilo.breve)}</span></td>`;
+      body+=`<tr><td class="cn" data-e="${cl.id}">${esc(cl.rs)}</td>`;
       // info cols
       INFO_COLS.forEach((ic,i)=>{
         const last=i===INFO_COLS.length-1;
@@ -4539,7 +4517,7 @@ function renderAdempimentiTable(){
     });
   }
 
-  const colgroup = `<colgroup><col class="col-cn"><col class="col-summary">${INFO_COLS.map(ic=>`<col class="col-info col-${ic.k}">`).join('')}${cats.map(c=>periods(c).map(()=>'<col class="col-check">').join('')).join('')}</colgroup>`;
+  const colgroup = `<colgroup><col class="col-cn">${INFO_COLS.map(ic=>`<col class="col-info col-${ic.k}">`).join('')}${cats.map(c=>periods(c).map(()=>'<col class="col-check">').join('')).join('')}</colgroup>`;
   $('tw').innerHTML=`<table class="grid">${colgroup}<thead>${h1}${h2}</thead><tbody>${body}</tbody></table>`;
   $('tw').querySelectorAll('td.cell[data-cid]').forEach(td=>td.addEventListener('click',onCell));
   $('tw').querySelectorAll('td.cn').forEach(td=>td.addEventListener('click',()=>{
@@ -7625,35 +7603,40 @@ body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid tbody td.
 <!-- CLAUDIO_FIX_RIDUCI_MESI_UNIFORMI_20260720_END -->
 
 
-<!-- CLAUDIO_ADEMPIMENTI_COMPATTI_20260721_START -->
-<style id="claudio-adempimenti-compatti-20260721">
-/* Colonne di avanzamento più raccolte, mantenendo una dimensione comoda al tocco. */
-:root{--check-col:30px;--check-box:22px;--client-summary-col:230px;}
-body[data-workspace="adempimenti"] #tw table.grid col.col-summary{width:var(--client-summary-col)!important;min-width:var(--client-summary-col)!important;max-width:var(--client-summary-col)!important;}
-body[data-workspace="adempimenti"] #tw table.grid th.client-summary-h,
-body[data-workspace="adempimenti"] #tw table.grid td.client-summary{
-  position:sticky!important;left:210px;z-index:4;
-  width:var(--client-summary-col)!important;min-width:var(--client-summary-col)!important;max-width:var(--client-summary-col)!important;
-  padding:3px 8px!important;border-right:2px solid var(--line2)!important;
-  background:#F4F9FC!important;text-align:left!important;vertical-align:middle!important;
+
+<!-- CLAUDIO_ADEMPIMENTI_COLONNE_UNIFORMI_20260721_START -->
+<style id="claudio-adempimenti-colonne-uniformi-20260721">
+/* Ogni periodo/adempimento usa la stessa larghezza delle caselle di Prima Nota. */
+:root{--check-col:28px;--check-box:21px;}
+body[data-workspace="adempimenti"] #tw table.grid col.col-check,
+body[data-workspace="adempimenti"] #tw table.grid td.cell,
+body[data-workspace="adempimenti"] #tw table.grid thead tr.r2 th:not(.onorario-sub){
+  width:var(--check-col)!important;min-width:var(--check-col)!important;max-width:var(--check-col)!important;
 }
-body[data-workspace="adempimenti"] #tw table.grid th.client-summary-h{z-index:5;top:0;background:#EAF5FB!important;text-align:center!important;font-size:9px!important;font-weight:900!important;text-transform:uppercase!important;letter-spacing:.35px!important;}
-body[data-workspace="adempimenti"] #tw table.grid .client-summary-type{display:block;color:#006EA8;font-size:9px;font-weight:950;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-body[data-workspace="adempimenti"] #tw table.grid .client-summary-list{display:block;margin-top:2px;color:#344054;font-size:9px;font-weight:800;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body[data-workspace="adempimenti"] #tw table.grid td.cell{padding:0!important;}
+body[data-workspace="adempimenti"] #tw table.grid th.cat-h{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  hyphens:auto!important;
+  text-align:center!important;
+  vertical-align:middle!important;
+  line-height:1.05!important;
+  font-size:8px!important;
+  letter-spacing:0!important;
+  padding:4px 2px!important;
+  overflow:hidden!important;
+}
+body[data-workspace="adempimenti"] #tw table.grid thead tr.r1{height:auto!important;}
+body[data-workspace="adempimenti"] #tw table.grid thead tr.r1 th{height:auto!important;min-height:34px!important;}
 body[data-workspace="adempimenti"] #tw table.grid td.sep-r,
 body[data-workspace="adempimenti"] #tw table.grid th.sep-r,
 body[data-workspace="adempimenti"] #tw table.grid th.ic-end,
-body[data-workspace="adempimenti"] #tw table.grid td.ic-end{border-right-width:5px!important;}
-body[data-workspace="adempimenti"] #tw table.grid .cat-h{font-size:9px!important;letter-spacing:.1px!important;}
-body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid th.client-summary-h,
-body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid td.client-summary{left:150px;}
+body[data-workspace="adempimenti"] #tw table.grid td.ic-end{border-right-width:4px!important;}
 @media (max-width:760px){
-  :root{--check-col:34px;--check-box:26px;--client-summary-col:190px;}
-  body[data-workspace="adempimenti"] #tw table.grid th.client-summary-h,body[data-workspace="adempimenti"] #tw table.grid td.client-summary{left:154px;padding:3px 6px!important;}
-  body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid th.client-summary-h,body[data-workspace="adempimenti"]:not(.ademp-expanded) #tw table.grid td.client-summary{left:125px;}
-  body[data-workspace="adempimenti"] #tw table.grid .client-summary-type{font-size:8.5px;}
-  body[data-workspace="adempimenti"] #tw table.grid .client-summary-list{font-size:8px;}
+  :root{--check-col:30px;--check-box:23px;}
+  body[data-workspace="adempimenti"] #tw table.grid th.cat-h{font-size:7.5px!important;padding:4px 1px!important;}
 }
 </style>
-<!-- CLAUDIO_ADEMPIMENTI_COMPATTI_20260721_END -->
+<!-- CLAUDIO_ADEMPIMENTI_COLONNE_UNIFORMI_20260721_END -->
 </body></html>
