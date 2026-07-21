@@ -3499,7 +3499,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
         <div class="fi"><label>Adempimento</label><select id="filterCat"><option value="">Tutti gli adempimenti</option></select></div>
         <div class="fi"><label>Regime contabile</label><select id="filterRegime"><option value="">Tutti i regimi</option></select></div>
       </div>
-      <div class="filter-help">I criteri selezionati vengono applicati insieme. L’adempimento considera l’applicabilità nell’anno visualizzato.</div>
+      <div class="filter-help">I criteri selezionati vengono applicati insieme. Se scegli un adempimento, la tabella mostra esclusivamente le sue colonne e i clienti ai quali è applicabile nell’anno visualizzato.</div>
     </div>
     <div class="mf filter-actions"><button class="btn danger" id="btnFiltersReset" type="button" style="margin-right:auto">Azzera filtri</button><button class="btn ghost" data-cl="ovFilters" type="button">Annulla</button><button class="btn pri" id="btnFiltersApply" type="button">Applica filtri</button></div>
   </div>
@@ -4510,7 +4510,9 @@ function clientCatDeadline(cl,c){
 
 function renderAdempimentiTable(){
   if(S && Array.isArray(S.categorie)) S.categorie.forEach(c=>{ if(c && c.nome) c.nome=String(c.nome).toLocaleUpperCase('it-IT'); });
-  const cats=S.categorie;
+  const cats=ADEMP_FILTERS.cat
+    ? S.categorie.filter(c=>c.id===ADEMP_FILTERS.cat)
+    : S.categorie;
   const list=filt();
   const sk=$('sortSel')?$('sortSel').value:'rs';
   const totalCols=1+INFO_COLS.length+cats.reduce((s,c)=>s+periods(c).length,0);
