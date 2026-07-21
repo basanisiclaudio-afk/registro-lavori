@@ -2933,6 +2933,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
   <span class="workspace-chip" id="workspaceChip">Adempimenti</span>
   <button class="btn" id="btnSwitchWorkspace" type="button">🏠 Portale</button>
   <button class="btn ademp-only" id="btnExpandInfo" type="button">Espandi</button>
+  <button class="btn ademp-only" id="btnFilters" type="button">🔎 Filtri <span class="filter-count" id="filterCount"></span></button>
   <button class="btn comp-only" id="btnRubrica" type="button">🏢 Gestione clienti</button>
   <button class="btn comp-only" id="btnIncassiRateali" type="button">💶 Incassi rateali</button>
   <button class="btn pri" id="btnDash">📊 Dashboard</button>
@@ -3485,6 +3486,22 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
       <button class="btn ghost" data-cl="ovC">Annulla</button>
       <button class="btn pri" id="btnSav">Salva</button>
     </div>
+  </div>
+</div>
+
+<!-- MODALE FILTRI ADEMPIMENTI -->
+<div class="ov" id="ovFilters">
+  <div class="modal wide filter-modal">
+    <div class="mh"><div><h2>Filtri adempimenti</h2><div class="filter-subtitle">Seleziona uno o più criteri</div></div><button class="xbtn" data-cl="ovFilters">×</button></div>
+    <div class="mb">
+      <div class="rg rg3 filter-grid">
+        <div class="fi"><label>Operatore</label><select id="filterOp"><option value="">Tutti gli operatori</option></select></div>
+        <div class="fi"><label>Adempimento</label><select id="filterCat"><option value="">Tutti gli adempimenti</option></select></div>
+        <div class="fi"><label>Regime contabile</label><select id="filterRegime"><option value="">Tutti i regimi</option></select></div>
+      </div>
+      <div class="filter-help">I criteri selezionati vengono applicati insieme. L’adempimento considera l’applicabilità nell’anno visualizzato.</div>
+    </div>
+    <div class="mf filter-actions"><button class="btn danger" id="btnFiltersReset" type="button" style="margin-right:auto">Azzera filtri</button><button class="btn ghost" data-cl="ovFilters" type="button">Annulla</button><button class="btn pri" id="btnFiltersApply" type="button">Applica filtri</button></div>
   </div>
 </div>
 
@@ -4308,10 +4325,63 @@ function sortCompare(a,b,key){
   return c!==0?c:a.rs.localeCompare(b.rs);
 }
 
+const ADEMP_FILTERS={op:'',cat:'',regime:''};
+function uniqueClientValues(field){
+  return [...new Set((S.clienti||[]).map(c=>String(c[field]||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}));
+}
+function setAdempFilterOptions(id,placeholder,items,selected){
+  const el=$(id); if(!el) return;
+  el.innerHTML=`<option value="">${esc(placeholder)}</option>`+items.map(item=>{
+    const value=typeof item==='string'?item:item.value;
+    const label=typeof item==='string'?item:item.label;
+    return `<option value="${esc(value)}">${esc(label)}</option>`;
+  }).join('');
+  el.value=selected||'';
+}
+function syncAdempFilterButton(){
+  const active=[ADEMP_FILTERS.op,ADEMP_FILTERS.cat,ADEMP_FILTERS.regime].filter(Boolean).length;
+  const btn=$('btnFilters'), badge=$('filterCount');
+  if(btn){btn.classList.toggle('filters-active',active>0);btn.setAttribute('aria-pressed',active>0?'true':'false');}
+  if(badge) badge.textContent=active?String(active):'';
+}
+function openAdempFilters(){
+  const cats=(S.categorie||[]).map(c=>({value:c.id,label:String(c.nome||'').toLocaleUpperCase('it-IT')}));
+  if(ADEMP_FILTERS.cat && !cats.some(c=>c.value===ADEMP_FILTERS.cat)) ADEMP_FILTERS.cat='';
+  setAdempFilterOptions('filterOp','Tutti gli operatori',uniqueClientValues('op'),ADEMP_FILTERS.op);
+  setAdempFilterOptions('filterCat','Tutti gli adempimenti',cats,ADEMP_FILTERS.cat);
+  setAdempFilterOptions('filterRegime','Tutti i regimi contabili',uniqueClientValues('regime'),ADEMP_FILTERS.regime);
+  openOv('ovFilters');
+}
+function applyAdempFilters(){
+  ADEMP_FILTERS.op=$('filterOp')?$('filterOp').value:'';
+  ADEMP_FILTERS.cat=$('filterCat')?$('filterCat').value:'';
+  ADEMP_FILTERS.regime=$('filterRegime')?$('filterRegime').value:'';
+  syncAdempFilterButton();
+  closeOv('ovFilters');
+  renderTable();
+  const active=[ADEMP_FILTERS.op,ADEMP_FILTERS.cat,ADEMP_FILTERS.regime].filter(Boolean).length;
+  toast(active?`${active} ${active===1?'filtro applicato':'filtri applicati'}`:'Filtri rimossi');
+}
+function resetAdempFilters(){
+  ADEMP_FILTERS.op='';ADEMP_FILTERS.cat='';ADEMP_FILTERS.regime='';
+  ['filterOp','filterCat','filterRegime'].forEach(id=>{const el=$(id);if(el)el.value='';});
+  syncAdempFilterButton();
+  closeOv('ovFilters');
+  renderTable();
+  toast('Filtri azzerati');
+}
+
 function filt(){
   const q=($('search').value||'').trim().toUpperCase();
   const sk=$('sortSel')?$('sortSel').value:'rs';
-  let list=S.clienti.filter(c=>!q||c.rs.toUpperCase().includes(q));
+  let list=S.clienti.filter(c=>{
+    if(q && !String(c.rs||'').toUpperCase().includes(q)) return false;
+    if(ADEMP_FILTERS.op && String(c.op||'')!==ADEMP_FILTERS.op) return false;
+    if(ADEMP_FILTERS.regime && String(c.regime||'')!==ADEMP_FILTERS.regime) return false;
+    if(ADEMP_FILTERS.cat && !appl(c,ADEMP_FILTERS.cat,S.anno)) return false;
+    return true;
+  });
   if(sk==='rs') list.sort((a,b)=>a.rs.localeCompare(b.rs));
   else list.sort((a,b)=>sortCompare(a,b,sk));
   return list;
@@ -6996,6 +7066,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
   $('f_imp').addEventListener('blur',()=>{$('f_imp').value=formatMoney($('f_imp').value);});
   $('btnDel').addEventListener('click',delC);
+  $('btnFilters')?.addEventListener('click',openAdempFilters);
+  $('btnFiltersApply')?.addEventListener('click',applyAdempFilters);
+  $('btnFiltersReset')?.addEventListener('click',resetAdempFilters);
+  syncAdempFilterButton();
   $('btnAdem').addEventListener('click',()=>{renderCats();openOv('ovA');});
   $('btnEditLock').addEventListener('click',toggleEditMode);
   setEditMode(false);
@@ -7671,4 +7745,25 @@ body[data-workspace="adempimenti"] #tw table.grid td.cell.na::after{
 }
 </style>
 <!-- CLAUDIO_NON_APPLICABILE_PORPORA_X_20260721_END -->
+
+<!-- CLAUDIO_FILTRI_ADEMPIMENTI_20260721_START -->
+<style id="claudio-filtri-adempimenti-20260721">
+#btnFilters{align-items:center;gap:6px;}
+#btnFilters.filters-active{background:#EAF8FE!important;border-color:#00AEEF!important;color:#006EA8!important;box-shadow:0 0 0 3px rgba(0,174,239,.10)!important;}
+.filter-count{display:none;min-width:19px;height:19px;padding:0 6px;border-radius:999px;background:#0077B6;color:#fff;font-size:10px;font-weight:900;align-items:center;justify-content:center;line-height:1;}
+.filter-count:not(:empty){display:inline-flex;}
+.filter-modal{max-width:760px!important;}
+.filter-subtitle{margin-top:3px;color:var(--ink-s);font-size:11px;font-weight:650;}
+.filter-grid{gap:14px!important;}
+.filter-grid .fi{margin-bottom:0;}
+.filter-grid select{min-height:42px!important;background:#fff!important;}
+.filter-help{margin-top:14px;padding:11px 13px;border:1px solid #BDE6F5;border-radius:12px;background:#F8FDFF;color:#0B5F86;font-size:11px;font-weight:700;line-height:1.35;}
+.filter-actions{align-items:center;}
+@media (max-width:760px){
+  .filter-modal{max-width:calc(100vw - 14px)!important;}
+  .filter-actions .btn{flex:1 1 100%!important;}
+  .filter-actions #btnFiltersReset{margin-right:0!important;order:3;}
+}
+</style>
+<!-- CLAUDIO_FILTRI_ADEMPIMENTI_20260721_END -->
 </body></html>
