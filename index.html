@@ -3413,7 +3413,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
     </div>
   </div>
   <div class="panel chart-panel">
-    <h3>Andamento mensile — Registrazioni IVA + Prima Nota</h3>
+    <h3>Andamento mensile — Liquidazioni IVA + Prima Nota</h3>
     <canvas id="trendCanvas" width="600" height="150" style="width: 600px; height: 150px;"></canvas>
   </div>
 </div>
@@ -3475,7 +3475,7 @@ body.edit-locked[data-workspace="compensi"] .comp-drag-handle{cursor:default!imp
       </div>
       <div class="rg rg3">
         <div class="fi"><label>IVA</label><select id="f_iva"><option value="">— scegli —</option><option>MENSILE</option><option>TRIMESTRALE</option></select></div>
-        <div class="fi"><label>Regime contabile</label><select id="f_reg"><option value="">— scegli —</option><option>ORDINARIA</option><option>SEMPLIFICATA</option><option>ORDINARIA 398/91</option><option>SEMPLIFICATA 398/91</option><option>ORDINARIA AG.VIAGGI</option><option>CODICE FISCALE</option><option>ART.86</option><option>ASS.NE P.IVA</option></select></div>
+        <div class="fi"><label>Regime contabile</label><select id="f_reg"><option value="">— scegli —</option><option>ORDINARIA</option><option>SEMPLIFICATA</option><option>ORDINARIA AG.VIAGGI</option><option>ORDINARIA (SSD SRL REGIME 398/91)</option><option>SEMPLIFICATA (ASD REGIME 398/91 CON PARTITA IVA)</option><option>SEMPLIFICATA (ASD CON CODICE FISCALE)</option><option>SEMPLIFICATA (ASSOCIAZIONE CON CODICE FISCALE)</option><option>SEMPLIFICATA (ASSOCIAZIONE CON PARTITA IVA)</option><option>SEMPLIFICATA (APS/ODV REGIME ART.86 CTS)</option><option>SEMPLIFICATA (ALTRI ETS REGIME ART.80 CTS)</option></select></div>
         <div class="fi"><label>Gestione paghe</label><select id="f_pag"><option value="">— scegli —</option><option>ESTERNO</option><option>ATHLETIS</option><option>ST. PURSCEDU</option><option>ST. BASANISI</option></select></div>
       </div>
       <div class="fi"><label>Note</label><textarea id="f_note"></textarea></div>
@@ -3802,18 +3802,42 @@ const OPERATORI_MIGRATE={
 };
 const COMPENSI=['FATT. FORFAIT M.LE','FATT. FORFAIT ANN.LE','FATT. M.LE','FATT. A.LE'];
 const IVA_OPTS=['MENSILE','TRIMESTRALE'];
-const REGIMI=['ORDINARIA','SEMPLIFICATA','ORDINARIA 398/91','SEMPLIFICATA 398/91','ORDINARIA AG.VIAGGI','CODICE FISCALE','ART.86','ASS.NE P.IVA'];
+const REGIMI=[
+  'ORDINARIA',
+  'SEMPLIFICATA',
+  'ORDINARIA AG.VIAGGI',
+  'ORDINARIA (SSD SRL REGIME 398/91)',
+  'SEMPLIFICATA (ASD REGIME 398/91 CON PARTITA IVA)',
+  'SEMPLIFICATA (ASD CON CODICE FISCALE)',
+  'SEMPLIFICATA (ASSOCIAZIONE CON CODICE FISCALE)',
+  'SEMPLIFICATA (ASSOCIAZIONE CON PARTITA IVA)',
+  'SEMPLIFICATA (APS/ODV REGIME ART.86 CTS)',
+  'SEMPLIFICATA (ALTRI ETS REGIME ART.80 CTS)'
+];
 const PAGHE_OPTS=['ESTERNO','ATHLETIS','ST. PURSCEDU','ST. BASANISI'];
+const ADEMPIMENTI_CATALOG_VERSION='20260721-v1';
 const REQUIRED_CATEGORIES=[
-  {id:'mod770',  nome:'770',              per:'annuale', scad:{d:31,m:10,y:2026}, yearOffset:1},
-  {id:'lipe1',   nome:'LI.PE. I TRIM.',   per:'annuale', scad:{d:31,m:5,y:2026},  yearOffset:0},
-  {id:'lipe2',   nome:'LI.PE. II TRIM.',  per:'annuale', scad:{d:30,m:9,y:2026},  yearOffset:0},
-  {id:'lipe3',   nome:'LI.PE. III TRIM.', per:'annuale', scad:{d:30,m:11,y:2026}, yearOffset:0},
-  {id:'lipe4',   nome:'LI.PE. IV TRIM.',  per:'annuale', scad:{d:28,m:2,y:2026},  yearOffset:1},
-  {id:'depbilrunst', nome:'DEP.TO BILANCIO RUNST', per:'annuale', scad:{d:30,m:6,y:2026}, yearOffset:1, defaultApplicable:false,
-    aliases:['DEPOSITO BILANCIO RUNST','DEP.TO BILANCIO RUNTS','DEPOSITO BILANCIO RUNTS']},
-  {id:'rendicassa', nome:'RENDICONTO ANNUALE PER CASSA', per:'annuale', scad:{d:30,m:4,y:2026}, yearOffset:1, defaultApplicable:false,
+  {id:'regiva', nome:'LIQUIDAZIONI IVA', per:'mensile', aliases:['REGISTRAZIONI IVA']},
+  {id:'prnota', nome:'PRIMA NOTA', per:'mensile'},
+  {id:'cu', nome:'CU', per:'annuale', scad:{d:16,m:3}, yearOffset:1},
+  {id:'diciva', nome:'DICHIARAZIONE IVA', per:'annuale', scad:{d:30,m:4}, yearOffset:1, aliases:['DIC.IVA','DIC IVA']},
+  {id:'scirap', nome:'SC/IRAP', per:'annuale', scad:{d:31,m:10}, yearOffset:1, aliases:['SC / IRAP']},
+  {id:'depbil', nome:'DEPOSITO BILANCIO CCIAA', per:'annuale', scad:{d:30,m:5}, yearOffset:1, aliases:['DEP.TO BILANCIO','DEPOSITO BILANCIO']},
+  {id:'cflxte10e', nome:'ENC/IRAP ANNUALI', per:'annuale', scad:{d:31,m:10}, yearOffset:1, aliases:['ENC / IRAP ANNUALI']},
+  {id:'cyhg6v9as', nome:'ENC/IRAP INFRANNUALI', per:'annuale', scad:{d:30,m:4}, yearOffset:1, aliases:['ENC / IRAP INFRANNUALI']},
+  {id:'mod770', nome:'770', per:'annuale', scad:{d:31,m:10}, yearOffset:1, aliasIds:['cza6xdkfk']},
+  {id:'lipe1', nome:'LI.PE 1°TRIM', per:'annuale', scad:{d:31,m:5}, yearOffset:0, aliasIds:['cxjlfpamj'], aliases:['LI.PE. I TRIM.','LI.PE I TRIM','LI.PE. 1° TRIM.']},
+  {id:'lipe2', nome:'LI.PE 2°TRIM', per:'annuale', scad:{d:30,m:9}, yearOffset:0, aliasIds:['cevrq8ot3'], aliases:['LI.PE. II TRIM.','LI.PE II TRIM','LI.PE. 2° TRIM.']},
+  {id:'lipe3', nome:'LI.PE 3°TRIM', per:'annuale', scad:{d:30,m:11}, yearOffset:0, aliasIds:['c9irnaf7p'], aliases:['LI.PE. III TRIM.','LI.PE III TRIM','LI.PE. 3° TRIM.']},
+  {id:'lipe4', nome:'LI.PE 4°TRIM', per:'annuale', scad:{d:28,m:2}, yearOffset:1, aliasIds:['cvckwvqbd'], aliases:['LI.PE. IV TRIM.','LI.PE IV TRIM','LI.PE. 4° TRIM.']},
+  {id:'depbilrunst', nome:'DEPOSITO BILANCIO RUNST', per:'annuale', scad:{d:30,m:6}, yearOffset:1, defaultApplicable:false,
+    aliases:['DEP.TO BILANCIO RUNST','DEP.TO BILANCIO RUNTS','DEPOSITO BILANCIO RUNTS']},
+  {id:'rendicassa', nome:'RENDICONTO ANNUALE PER CASSA', per:'annuale', scad:{d:30,m:4}, yearOffset:1, defaultApplicable:false,
     aliases:['RENDICONTO ANNUALE CASSA','RENDICONTO PER CASSA']},
+  {id:'liqiva398', nome:'LIQUIDAZIONI IVA 398/91', per:'trimestrale', defaultApplicable:false},
+  {id:'scirap398', nome:'SC/IRAP 398/91', per:'annuale', scad:{d:31,m:10}, yearOffset:1, defaultApplicable:false},
+  {id:'rendmodd', nome:'RENDICONTO PER CASSA MODELLO D.', per:'annuale', scad:{d:30,m:4}, yearOffset:1, defaultApplicable:false},
+  {id:'deprendmoddrunst', nome:'DEPOSITO RENDICONTO PER CASSA MODELLO D. AL RUNST', per:'annuale', scad:{d:30,m:6}, yearOffset:1, defaultApplicable:false}
 ];
 function normKey(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
 function normOp(v){
@@ -3834,16 +3858,24 @@ function normFat(v){
   return '';
 }
 function normIva(v){v=String(v||'').trim().toUpperCase();if(v==='M'||v==='MENSILE')return 'MENSILE';if(v==='T'||v==='TRIMESTRALE')return 'TRIMESTRALE';return IVA_OPTS.includes(v)?v:'';}
-function normRegime(v){
+function normRegime(v,tipo){
   v=String(v||'').trim().toUpperCase();
   if(!v)return '';
+  if(REGIMI.includes(v))return v;
   if(v.includes('AG')&&v.includes('VIAG'))return 'ORDINARIA AG.VIAGGI';
-  if(v.includes('398')&&v.includes('SEMPL'))return 'SEMPLIFICATA 398/91';
-  if(v.includes('398'))return 'ORDINARIA 398/91';
+  if(v.includes('398')&&v.includes('SEMPL'))return 'SEMPLIFICATA (ASD REGIME 398/91 CON PARTITA IVA)';
+  if(v.includes('398'))return 'ORDINARIA (SSD SRL REGIME 398/91)';
+  if(normKey(v)==='CODICEFISCALE'){
+    return String(tipo||'').toUpperCase()==='ASD'
+      ? 'SEMPLIFICATA (ASD CON CODICE FISCALE)'
+      : 'SEMPLIFICATA (ASSOCIAZIONE CON CODICE FISCALE)';
+  }
+  if(normKey(v)==='ART86')return 'SEMPLIFICATA (APS/ODV REGIME ART.86 CTS)';
+  if(normKey(v)==='ASSNEPIVA')return 'SEMPLIFICATA (ASSOCIAZIONE CON PARTITA IVA)';
   if(v.includes('SEMPL'))return 'SEMPLIFICATA';
   if(v.includes('ORDIN'))return 'ORDINARIA';
   if(v.includes('PROFESSION'))return 'ORDINARIA';
-  return REGIMI.includes(v)?v:'';
+  return '';
 }
 function normPaghe(v){v=String(v||'').trim().toUpperCase();if(!v)return '';if(PAGHE_OPTS.includes(v))return v;if(v.includes('ATHLET'))return 'ATHLETIS';if(v.includes('PURSC'))return 'ST. PURSCEDU';return 'ST. BASANISI';}
 function moneyNumber(v){
@@ -3876,83 +3908,79 @@ function setSelectValue(id,value){
 }
 function ensureRequiredCategories(){
   if(!Array.isArray(S.categorie))S.categorie=[];
+  if(S.adempimentiCatalogVersion===ADEMPIMENTI_CATALOG_VERSION)return false;
+
+  const precedenti=S.categorie.slice();
+  const usati=new Set();
+  const successivi=[];
+
   REQUIRED_CATEGORIES.forEach(req=>{
-    const rk=normKey(req.nome);
-    const aliases=new Set((req.aliases||[]).map(normKey));
-    let c=S.categorie.find(x=>x.id===req.id||normKey(x.nome)===rk||aliases.has(normKey(x.nome)));
-    if(c){
-      c.nome=req.nome; c.per='annuale'; c.colore=CAT_COLOR;
-      c.scad=c.scad||{};
-      if(!c.scad.d)c.scad.d=req.scad.d;
-      if(!c.scad.m)c.scad.m=req.scad.m;
-      if(!c.scad.y)c.scad.y=req.scad.y;
-      // Aggiorna scadAnni per il range di anni corrente+prossimo:
-      // sovrascrive sempre (corregge dati errati già presenti, es. y:2028 → y:2027).
-      if(req.yearOffset!==undefined && S && S.anno){
-        if(!c.scadAnni)c.scadAnni={};
-        for(let y=S.anno-1;y<=S.anno+2;y++){
-          c.scadAnni[String(y)]={d:req.scad.d,m:req.scad.m,y:y+req.yearOffset};
-        }
+    const nomiAmmessi=new Set([req.nome,...(req.aliases||[])].map(normKey));
+    const idAmmessi=new Set([req.id,...(req.aliasIds||[])]);
+    const trovato=precedenti.find(c=>c && !usati.has(c.id) && (idAmmessi.has(c.id)||nomiAmmessi.has(normKey(c.nome))));
+    const nuovo=!trovato;
+    const c=trovato?{...trovato}:{id:req.id};
+    usati.add(c.id);
+    c.nome=req.nome;
+    c.per=req.per;
+    c.colore=CAT_COLOR;
+
+    if(req.per==='annuale'){
+      const annoBase=Number.isFinite(+S.anno)?+S.anno:2026;
+      const offset=req.yearOffset===0?0:1;
+      if(!c.scad || typeof c.scad!=='object'){
+        c.scad={d:req.scad.d,m:req.scad.m,y:annoBase+offset};
+      }
+      if(!c.scadAnni || typeof c.scadAnni!=='object')c.scadAnni={};
+      for(let y=2025;y<=2035;y++){
+        if(!c.scadAnni[String(y)])c.scadAnni[String(y)]={d:req.scad.d,m:req.scad.m,y:y+offset};
       }
     }else{
-      S.categorie.push({id:req.id,nome:req.nome,per:req.per,colore:CAT_COLOR,scad:{...req.scad}});
-      // I nuovi adempimenti specialistici compaiono come opzioni, senza
-      // diventare automaticamente dovuti per tutti i clienti già presenti.
-      if(req.defaultApplicable===false && Array.isArray(S.clienti)){
-        S.clienti.forEach(cl=>{
-          if(!cl.appl || typeof cl.appl!=='object') cl.appl={};
-          cl.appl[req.id]=false;
-        });
-      }
+      delete c.scad;
+      delete c.scadAnni;
+    }
+
+    successivi.push(c);
+    if(nuovo && req.defaultApplicable===false && Array.isArray(S.clienti)){
+      S.clienti.forEach(cl=>{
+        if(!cl.appl || typeof cl.appl!=='object')cl.appl={};
+        cl.appl[c.id]=false;
+      });
     }
   });
-}
-const DEPRECATED_CATEGORY_IDS=['encirap'];
-const DEPRECATED_CATEGORY_NAMES=new Set(['ENCIRAP']);
-function isDeprecatedCategory(c){
-  return !!c && (DEPRECATED_CATEGORY_IDS.includes(c.id) || DEPRECATED_CATEGORY_NAMES.has(normKey(c.nome)));
-}
-function purgeDeprecatedCategories(){
-  if(!S || !Array.isArray(S.categorie)) return false;
-  const removeIds=S.categorie.filter(isDeprecatedCategory).map(c=>c.id);
-  if(!removeIds.length) return false;
-  const removeSet=new Set(removeIds);
-  S.categorie=S.categorie.filter(c=>!removeSet.has(c.id));
-  if(Array.isArray(S.clienti)){
+
+  const rimossi=precedenti.filter(c=>c && !usati.has(c.id)).map(c=>c.id);
+  if(rimossi.length && Array.isArray(S.clienti)){
+    const rimossiSet=new Set(rimossi);
     S.clienti.forEach(cl=>{
-      removeIds.forEach(id=>{
-        if(cl.celle) delete cl.celle[id];
-        if(cl.appl) delete cl.appl[id];
-        if(cl.applAnno){
-          Object.keys(cl.applAnno).forEach(y=>{
-            if(cl.applAnno[y]){
-              delete cl.applAnno[y][id];
-              if(Object.keys(cl.applAnno[y]).length===0) delete cl.applAnno[y];
-            }
-          });
-          if(Object.keys(cl.applAnno).length===0) delete cl.applAnno;
-        }
-      });
+      if(cl.celle)rimossi.forEach(id=>delete cl.celle[id]);
+      if(cl.appl)rimossi.forEach(id=>delete cl.appl[id]);
+      if(cl.applAnno){
+        Object.keys(cl.applAnno).forEach(y=>{
+          const configurazione=cl.applAnno[y];
+          if(!configurazione)return;
+          Object.keys(configurazione).forEach(id=>{if(rimossiSet.has(id))delete configurazione[id];});
+          if(Object.keys(configurazione).length===0)delete cl.applAnno[y];
+        });
+        if(Object.keys(cl.applAnno).length===0)delete cl.applAnno;
+      }
     });
   }
+
+  S.categorie=successivi;
+  S.adempimentiCatalogVersion=ADEMPIMENTI_CATALOG_VERSION;
   return true;
 }
 function defCat(){
-  return [
-    {id:'regiva',  nome:'LIQUIDAZIONI IVA',   per:'mensile',  colore:CAT_COLOR},
-    {id:'prnota',  nome:'PRIMA NOTA',         per:'mensile',  colore:CAT_COLOR},
-    {id:'cu',      nome:'CU',                 per:'annuale',  colore:CAT_COLOR, scad:{d:16,m:3,y:2026}},
-    {id:'diciva',  nome:'DIC.IVA',            per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:4,y:2026}},
-    {id:'scirap',  nome:'SC / IRAP',          per:'annuale',  colore:CAT_COLOR, scad:{d:31,m:10,y:2026}},
-    {id:'depbil',  nome:'DEP.TO BILANCIO',    per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:5,y:2026}},
-    {id:'mod770',  nome:'770',                per:'annuale',  colore:CAT_COLOR, scad:{d:31,m:10,y:2026}},
-    {id:'lipe1',   nome:'LI.PE. I TRIM.',     per:'annuale',  colore:CAT_COLOR, scad:{d:31,m:5,y:2026}},
-    {id:'lipe2',   nome:'LI.PE. II TRIM.',    per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:9,y:2026}},
-    {id:'lipe3',   nome:'LI.PE. III TRIM.',   per:'annuale',  colore:CAT_COLOR, scad:{d:30,m:11,y:2026}},
-    {id:'lipe4',   nome:'LI.PE. IV TRIM.',    per:'annuale',  colore:CAT_COLOR, scad:{d:28,m:2,y:2026}},
-    {id:'depbilrunst', nome:'DEP.TO BILANCIO RUNST', per:'annuale', colore:CAT_COLOR, scad:{d:30,m:6,y:2026}},
-    {id:'rendicassa', nome:'RENDICONTO ANNUALE PER CASSA', per:'annuale', colore:CAT_COLOR, scad:{d:30,m:4,y:2026}},
-  ];
+  return REQUIRED_CATEGORIES.map(req=>{
+    const c={id:req.id,nome:req.nome,per:req.per,colore:CAT_COLOR};
+    if(req.per==='annuale'){
+      const annoBase=Number.isFinite(+S.anno)?+S.anno:2026;
+      const offset=req.yearOffset===0?0:1;
+      c.scad={d:req.scad.d,m:req.scad.m,y:annoBase+offset};
+    }
+    return c;
+  });
 }
 
 function guessTipo(rs,reg){
@@ -4059,22 +4087,10 @@ async function load(){
   }
 }
 function migrateState(allowSave=true){
-  // Migrazione non distruttiva: unifica solo il colore delle categorie esistenti,
-  // aggiorna i vecchi valori di "tipo soggetto" alla nuova nomenclatura, e imposta
-  // l'esercizio infrannuale di Cassina Nuova SOLO se non è già stato configurato a mano.
-  // Non tocca in nessun caso clienti, celle, stati, scadenze o note inserite manualmente.
+  // Allinea il catalogo richiesto preservando gli stati degli adempimenti equivalenti;
+  // elimina soltanto le vecchie categorie escluse dal nuovo catalogo.
   let changed=false;
-  if(Array.isArray(S.categorie)){
-    const liquidazioniIva=S.categorie.find(c=>c && (c.id==='regiva' || normKey(c.nome)==='REGISTRAZIONIIVA'));
-    if(liquidazioniIva && liquidazioniIva.nome!=='LIQUIDAZIONI IVA'){
-      liquidazioniIva.nome='LIQUIDAZIONI IVA';
-      changed=true;
-    }
-  }
-  const beforeCats=JSON.stringify(S.categorie||[]);
-  ensureRequiredCategories();
-  if(purgeDeprecatedCategories()) changed=true;
-  if(JSON.stringify(S.categorie||[])!==beforeCats) changed=true;
+  if(ensureRequiredCategories())changed=true;
   if(S.categorie&&S.categorie.length){
     S.categorie.forEach(c=>{
       if(c.colore!==CAT_COLOR){ c.colore=CAT_COLOR; changed=true; }
@@ -4088,7 +4104,7 @@ function migrateState(allowSave=true){
   if(S.clienti&&S.clienti.length){
     S.clienti.forEach(cl=>{
       if(TIPO_MIGRATE[cl.tipo]){ cl.tipo=TIPO_MIGRATE[cl.tipo]; changed=true; }
-      const no=normOp(cl.op), nf=normFat(cl.fat), ni=normIva(cl.iva), nr=normRegime(cl.regime), np=normPaghe(cl.paghe), nm=formatMoney(cl.imp);
+      const no=normOp(cl.op), nf=normFat(cl.fat), ni=normIva(cl.iva), nr=normRegime(cl.regime,cl.tipo), np=normPaghe(cl.paghe), nm=formatMoney(cl.imp);
       if((cl.op||'')!==no){cl.op=no;changed=true;}
       if((cl.fat||'')!==nf){cl.fat=nf;changed=true;}
       if((cl.iva||'')!==ni){cl.iva=ni;changed=true;}
@@ -4446,21 +4462,30 @@ function ensureCategoryDeadlines(c){
 function normalizeExistingDeadlineYears(c){
   if(!c || c.per!=='annuale') return false;
   let changed=false;
+  const req=REQUIRED_CATEGORIES.find(r=>{
+    const ids=new Set([r.id,...(r.aliasIds||[])]);
+    const names=new Set([r.nome,...(r.aliases||[])].map(normKey));
+    return ids.has(c.id)||names.has(normKey(c.nome));
+  });
+  const offset=req&&req.yearOffset===0?0:1;
   if(c.scadAnni && typeof c.scadAnni==='object'){
     Object.keys(c.scadAnni).forEach(key=>{
       const wy=+key;
       if(!Number.isFinite(wy)) return;
       const s=c.scadAnni[key]||{};
-      // Corregge la versione precedente: pagina 2025 con anno scadenza 2025,
-      // pagina 2026 con anno scadenza 2026, ecc. doveva essere sempre +1.
-      if(+s.y===wy){
-        c.scadAnni[key]={...s,y:wy+1};
+      const targetYear=wy+offset;
+      // Corregge le vecchie impostazioni automatiche (stesso anno/anno successivo)
+      // rispettando la periodicità propria di ogni adempimento del catalogo.
+      if(+s.y!==targetYear && (+s.y===wy || +s.y===wy+1)){
+        c.scadAnni[key]={...s,y:targetYear};
         changed=true;
       }
     });
   }
-  if(c.scad && Number.isFinite(+c.scad.y) && +c.scad.y===workYear(S&&S.anno?S.anno:2026)){
-    c.scad={...c.scad,y:defaultDeadlineYear(S&&S.anno?S.anno:2026)};
+  const currentWorkYear=workYear(S&&S.anno?S.anno:2026);
+  const currentTargetYear=currentWorkYear+offset;
+  if(c.scad && Number.isFinite(+c.scad.y) && +c.scad.y!==currentTargetYear && (+c.scad.y===currentWorkYear || +c.scad.y===currentWorkYear+1)){
+    c.scad={...c.scad,y:currentTargetYear};
     changed=true;
   }
   return changed;
@@ -4472,10 +4497,10 @@ function catDeadlineLabel(c){
   return p2(d.getDate())+'.'+p2(d.getMonth()+1)+'.'+scad.y;
 }
 
-// CU e DIC.IVA seguono sempre l'anno solare (l'IVA e le certificazioni uniche non dipendono
-// dalla chiusura dell'esercizio sociale del cliente). SC/IRAP e DEP.TO BILANCIO invece sì.
+// CU e DICHIARAZIONE IVA seguono sempre l'anno solare (l'IVA e le certificazioni uniche non dipendono
+// dalla chiusura dell'esercizio sociale del cliente). SC/IRAP e DEPOSITO BILANCIO CCIAA invece sì.
 function isFyDependent(c){
-  return c.id==='scirap' || c.id==='depbil';
+  return c.id==='scirap' || c.id==='scirap398' || c.id==='depbil';
 }
 // Scarto in giorni fra la chiusura esercizio standard (31/12) e la scadenza di categoria,
 // usato per traslare la scadenza quando il cliente ha un esercizio infrannuale.
@@ -4657,7 +4682,7 @@ function openC(id){
     $('f_rs').value=cl.rs; $('f_tipo').value=cl.tipo||'SRL';
     setSelectValue('f_op',normOp(cl.op));
     setSelectValue('f_fat',normFat(cl.fat)); $('f_imp').value=formatMoney(cl.imp||'');
-    setSelectValue('f_iva',normIva(cl.iva)); setSelectValue('f_reg',normRegime(cl.regime));
+    setSelectValue('f_iva',normIva(cl.iva)); setSelectValue('f_reg',normRegime(cl.regime,cl.tipo));
     setSelectValue('f_pag',normPaghe(cl.paghe)); $('f_note').value=cl.note||'';
     $('f_eserc').value=cl.eserc||'annuale';
     $('f_eserc_ini').value=cl.eserc_ini||'';
@@ -4682,7 +4707,7 @@ function salvaC(){
   document.querySelectorAll('#chk input[type=checkbox]').forEach(cb=>{appl[cb.dataset.cc]=cb.checked;});
   const p={rs,tipo:$('f_tipo').value,op:normOp($('f_op').value),
     fat:normFat($('f_fat').value),imp:formatMoney($('f_imp').value),iva:normIva($('f_iva').value),
-    regime:normRegime($('f_reg').value),paghe:normPaghe($('f_pag').value),note:$('f_note').value.trim(),
+    regime:normRegime($('f_reg').value,$('f_tipo').value),paghe:normPaghe($('f_pag').value),note:$('f_note').value.trim(),
     eserc:$('f_eserc').value,eserc_ini:$('f_eserc_ini').value,eserc_fine:$('f_eserc_fine').value,appl};
   if(eid){Object.assign(S.clienti.find(c=>c.id===eid),p);}
   else{const mn=S.clienti.reduce((m,c)=>Math.max(m,c.n||0),0);S.clienti.push({id:uid(),n:mn+1,celle:{},...p});}
@@ -4798,7 +4823,7 @@ function importBk(wb){
   const json=rows.map(r=>r&&r[0]!=null?String(r[0]):'').join('');
   const parsed=JSON.parse(json);
   if(!confirm('Sostituirà TUTTI i dati attuali. Continuare?')){$('impMsg').textContent='Annullato.';return;}
-  S=parsed;save();refreshAnno();renderTable();renderDashboard();
+  S=parsed;migrateState(false);save();refreshAnno();renderTable();renderDashboard();
   $('impMsg').innerHTML=`<span style="color:#33594A;">Backup caricato: ${S.clienti.length} clienti.</span>`;
   toast('Backup importato');
 }
@@ -4838,9 +4863,10 @@ function importRoster(wb){
       if(reg.toUpperCase().includes('398/91'))appl.diciva=false;
       const g=k=>cols[k]>=0?String(row[cols[k]]||'').trim():'';
       const mn=S.clienti.reduce((m,c)=>Math.max(m,c.n||0),0);
-      S.clienti.push({id:uid(),n:mn+1,rs,tipo:guessTipo(rs,reg),
+      const tipo=guessTipo(rs,reg);
+      S.clienti.push({id:uid(),n:mn+1,rs,tipo,
         resp:g('resp'),op:g('op'),fat:g('fat'),imp:g('imp'),
-        iva:g('iva')||'T',regime:reg,paghe:g('paghe'),note:g('note'),appl,celle:{}});
+        iva:g('iva')||'T',regime:normRegime(reg,tipo),paghe:g('paghe'),note:g('note'),appl,celle:{}});
       ex.add(key);added++;
     }
   }
